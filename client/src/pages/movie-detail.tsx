@@ -8,18 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { Movie, CastMember } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, UserRound, PlusCircle } from "lucide-react";
+import { ArrowLeft, Clock, UserRound, PlusCircle, Users } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import placeholderImage from "@/assets/movie-placeholder.svg";
 import { MovieReactions } from "@/components/movie-reactions";
 import { SocialShare } from "@/components/social-share";
 import { AddToPlaylist } from "@/components/add-to-playlist";
+import SharedWatchModal from "@/components/shared-watch-modal";
+import { useAuth } from "@/hooks/use-auth";
 
 const MovieDetail: FC = () => {
   const [match, params] = useRoute("/movies/:id");
   const [_, navigate] = useLocation();
   const [imageError, setImageError] = useState(false);
+  const [isSharedWatchModalOpen, setIsSharedWatchModalOpen] = useState(false);
+  const { user } = useAuth();
   
   const { data: movie, isLoading, isError } = useQuery<Movie>({
     queryKey: [`/api/movies/${params?.id}`],
@@ -279,11 +283,29 @@ const MovieDetail: FC = () => {
                 <Clock className="mr-2 h-5 w-5" /> I'll Watch This
               </Button>
               
+              {user && (
+                <Button 
+                  className="w-full md:w-auto"
+                  variant="secondary"
+                  onClick={() => setIsSharedWatchModalOpen(true)}
+                >
+                  <Users className="mr-2 h-5 w-5" /> Watched With Friend
+                </Button>
+              )}
+              
               <AddToPlaylist
                 movie={movie}
                 variant="outline"
               />
             </div>
+            
+            {movie && (
+              <SharedWatchModal 
+                movie={movie}
+                isOpen={isSharedWatchModalOpen}
+                onClose={() => setIsSharedWatchModalOpen(false)}
+              />
+            )}
           </div>
         </div>
       </div>
