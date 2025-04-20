@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
@@ -8,11 +8,11 @@ import { TMDbSearch } from '@/components/tmdb-search';
 
 const AdminPage: FC = () => {
   const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   // If not loading and no user, redirect to auth page
   if (!isLoading && !user) {
-    navigate('/auth');
+    setLocation('/auth');
     return null;
   }
 

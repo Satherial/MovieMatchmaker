@@ -16,7 +16,8 @@ import {
   Film, 
   Menu, 
   Search, 
-  X 
+  X,
+  Settings
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
@@ -97,6 +98,15 @@ export default function Header() {
                     <User size={20} />
                     Profile
                   </Link>
+
+                  <Link 
+                    href="/admin" 
+                    className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
+                    onClick={closeMenu}
+                  >
+                    <Settings size={20} />
+                    Admin
+                  </Link>
                   
                   <Button 
                     variant="destructive" 
@@ -138,6 +148,12 @@ export default function Header() {
                   <Link href="/profile" className="cursor-pointer flex w-full items-center">
                     <User className="mr-2 h-4 w-4" />
                     Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin" className="cursor-pointer flex w-full items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Admin
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
