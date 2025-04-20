@@ -88,24 +88,18 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
       if (existingFriendship.status === "pending") {
         if (existingFriendship.userId === userId) {
           // User already sent a request to this friend
-          return res.status(400).json({ 
-            error: "You already sent a friend request to this user" 
-          });
+          return res.status(400).send("You already sent a friend request to this user");
         } else {
           // Friend already sent a request to the user
-          return res.status(400).json({ 
-            error: "This user has already sent you a friend request. Check your pending requests." 
-          });
+          return res.status(400).send("This user has already sent you a friend request. Check your pending requests.");
         }
       } else if (existingFriendship.status === "accepted") {
-        return res.status(400).json({ error: "This user is already your friend" });
+        return res.status(400).send("This user is already your friend");
       } else if (existingFriendship.status === "rejected") {
         // If it was rejected, check who rejected it
         if (existingFriendship.userId === userId) {
           // The current user sent the initial request that was rejected
-          return res.status(400).json({ 
-            error: "This user has rejected your friend request" 
-          });
+          return res.status(400).send("This user has rejected your friend request");
         } else {
           // The current user rejected the other user's request
           // Allow sending a new request if the current user is the one who rejected
@@ -134,12 +128,10 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
         friendlyMessage = "You've already sent a friend request to this user";
       }
       
-      return res.status(400).json({ 
-        error: friendlyMessage
-      });
+      return res.status(400).send(friendlyMessage);
     }
     
-    return res.status(500).json({ error: "Failed to send friend request" });
+    return res.status(500).send("Failed to send friend request");
   }
 });
 
