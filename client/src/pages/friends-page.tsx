@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { CheckIcon, UserPlusIcon, XIcon, UserX2Icon, Users2Icon, ChevronLeftIcon } from "lucide-react";
+import { CheckIcon, UserPlusIcon, XIcon, UserX2Icon, Users2Icon, ChevronLeftIcon, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { extractErrorMessage } from "@/lib/error-handler";
 
@@ -302,15 +302,22 @@ export default function FriendsPage() {
   });
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container max-w-4xl mx-auto py-8 px-4">
+      <div className="flex flex-wrap items-center gap-3 mb-2">
         <Link href="/">
-          <Button variant="outline">
-            <ChevronLeftIcon className="h-4 w-4 mr-2" /> Back to Home
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <ArrowLeft size={16} />
+            Back to Home
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">Friends</h1>
       </div>
+      
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Friends</h1>
+        <p className="text-muted-foreground">Connect with other users</p>
+      </div>
+      
+      <div className="border-b pb-2 mb-6"></div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 mb-6">
