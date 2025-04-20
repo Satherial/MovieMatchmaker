@@ -17,8 +17,7 @@
 .bg-popover,
 .bg-background,
 .bg-muted,
-.bg-input,
-[class*="bg-"] {
+.bg-input {
   background-color: white !important;
 }
 
@@ -26,7 +25,26 @@
 .dark .bg-popover,
 .dark .bg-background,
 .dark .bg-muted,
-.dark .bg-input,
-.dark [class*="bg-"] {
+.dark .bg-input {
   background-color: #1a1a1a !important;
+}
+
+/* Fix button styling */
+.btn-fix-primary, [variant="primary"] {
+  background-color: hsl(240 55% 58%) !important;
+  color: white !important;
+}
+
+.btn-fix-default, button[class*="bg-primary"] {
+  background-color: hsl(240 55% 58%) !important;
+  color: white !important;
+}
+
+button.text-primary-foreground {
+  color: white !important;
+}
+
+button[class*="bg-destructive"] {
+  background-color: #ef4444 !important;
+  color: white !important;
 }
