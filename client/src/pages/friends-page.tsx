@@ -45,6 +45,21 @@ function FriendCard({ friend, onAccept, onReject, onRemove }: {
   
   const initials = user.username.substring(0, 2).toUpperCase();
 
+  // Determine badge color based on status
+  let badgeVariant: "outline" | "default" | "secondary" | "destructive" = "outline";
+  let badgeText = friend.status;
+  
+  if (friend.status === "pending") {
+    badgeVariant = "secondary";
+    badgeText = "Pending";
+  } else if (friend.status === "accepted") {
+    badgeVariant = "default";
+    badgeText = "Friend";
+  } else if (friend.status === "rejected") {
+    badgeVariant = "destructive";
+    badgeText = "Rejected";
+  }
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
@@ -59,9 +74,7 @@ function FriendCard({ friend, onAccept, onReject, onRemove }: {
               <CardDescription>@{user.username}</CardDescription>
             </div>
           </div>
-          {friend.status === "pending" && (
-            <Badge variant="outline">{friend.status}</Badge>
-          )}
+          <Badge variant={badgeVariant}>{badgeText}</Badge>
         </div>
       </CardHeader>
       <CardFooter className="pt-1 flex justify-end gap-2">
@@ -76,8 +89,14 @@ function FriendCard({ friend, onAccept, onReject, onRemove }: {
           </>
         )}
         {onRemove && (
-          <Button variant="outline" size="sm" onClick={onRemove}>
-            <UserX2Icon className="h-4 w-4 mr-1" /> Remove
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onRemove} 
+            title={friend.status === "pending" ? "Cancel Request" : "Remove Friend"}
+          >
+            <UserX2Icon className="h-4 w-4 mr-1" /> 
+            {friend.status === "pending" ? "Cancel" : "Remove"}
           </Button>
         )}
       </CardFooter>
@@ -123,7 +142,7 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("friends");
 
-  // Get friends
+  // Get friends (accepted)
   const { data: friends = [], isLoading: isLoadingFriends } = useQuery({
     queryKey: ["/api/friends"],
     queryFn: async () => {
@@ -133,11 +152,21 @@ export default function FriendsPage() {
     enabled: !!user,
   });
 
-  // Get friend requests
+  // Get incoming friend requests
   const { data: friendRequests = [], isLoading: isLoadingRequests } = useQuery({
     queryKey: ["/api/friends/requests"],
     queryFn: async () => {
       const res = await fetch("/api/friends/requests");
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
+  // Get outgoing friend requests
+  const { data: sentRequests = [], isLoading: isLoadingSentRequests } = useQuery({
+    queryKey: ["/api/friends/sent-requests"],
+    queryFn: async () => {
+      const res = await fetch("/api/friends/sent-requests");
       return res.json();
     },
     enabled: !!user,
@@ -165,7 +194,9 @@ export default function FriendsPage() {
         description: "Your friend request has been sent successfully.",
       });
       setSearchQuery("");
+      // Refresh all friendship-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/friends"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
       toast({
@@ -186,8 +217,10 @@ export default function FriendsPage() {
         title: "Friend request accepted",
         description: "The friend request has been accepted.",
       });
+      // Refresh all friendship-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/friends"] });
       queryClient.invalidateQueries({ queryKey: ["/api/friends/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
       toast({
@@ -208,7 +241,10 @@ export default function FriendsPage() {
         title: "Friend request rejected",
         description: "The friend request has been rejected.",
       });
+      // Refresh all friendship-related queries
+      queryClient.invalidateQueries({ queryKey: ["/api/friends"] });
       queryClient.invalidateQueries({ queryKey: ["/api/friends/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
       toast({
@@ -229,7 +265,10 @@ export default function FriendsPage() {
         title: "Friend removed",
         description: "The friend has been removed from your friends list.",
       });
+      // Refresh all friendship-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/friends"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/friends/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
       toast({
@@ -245,15 +284,18 @@ export default function FriendsPage() {
       <h1 className="text-3xl font-bold mb-6">Friends</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="friends" className="flex items-center">
             <Users2Icon className="h-4 w-4 mr-2" /> Friends ({friends.length})
           </TabsTrigger>
           <TabsTrigger value="requests" className="flex items-center">
-            <UserPlusIcon className="h-4 w-4 mr-2" /> Requests ({friendRequests.length})
+            <UserPlusIcon className="h-4 w-4 mr-2" /> Received ({friendRequests.length})
+          </TabsTrigger>
+          <TabsTrigger value="sent" className="flex items-center">
+            <UserPlusIcon className="h-4 w-4 mr-2" /> Sent ({sentRequests.length})
           </TabsTrigger>
           <TabsTrigger value="find" className="flex items-center">
-            <UserPlusIcon className="h-4 w-4 mr-2" /> Find Friends
+            <UserPlusIcon className="h-4 w-4 mr-2" /> Find
           </TabsTrigger>
         </TabsList>
         
@@ -292,6 +334,30 @@ export default function FriendsPage() {
                 onReject={() => rejectRequestMutation.mutate(request.id)}
               />
             ))
+          )}
+        </TabsContent>
+        
+        <TabsContent value="sent">
+          {isLoadingSentRequests ? (
+            <div className="text-center py-10">Loading sent requests...</div>
+          ) : sentRequests.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">You haven't sent any friend requests.</p>
+              <Button className="mt-4" onClick={() => setActiveTab("find")}>Find Friends</Button>
+            </div>
+          ) : (
+            <>
+              <p className="text-muted-foreground mb-4">
+                These are your outgoing friend requests that are waiting for a response.
+              </p>
+              {sentRequests.map((request) => (
+                <FriendCard
+                  key={request.id}
+                  friend={request}
+                  onRemove={() => removeFriendMutation.mutate(request.friendId)}
+                />
+              ))}
+            </>
           )}
         </TabsContent>
         
