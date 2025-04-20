@@ -12,6 +12,8 @@ import { ArrowLeft, Clock, UserRound } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import placeholderImage from "@/assets/movie-placeholder.svg";
+import { MovieReactions } from "@/components/movie-reactions";
+import { SocialShare } from "@/components/social-share";
 
 const MovieDetail: FC = () => {
   const [match, params] = useRoute("/movie/:id");
@@ -254,6 +256,16 @@ const MovieDetail: FC = () => {
                   <p className="mt-2">Try searching for this movie in the Admin section to import enhanced details.</p>
                 </div>
               )}
+            </div>
+            
+            <Separator className="my-4" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <MovieReactions movieId={movie.id} />
+              <SocialShare 
+                title={movie.title} 
+                description={movie.description} 
+              />
             </div>
             
             <Separator className="my-4" />
