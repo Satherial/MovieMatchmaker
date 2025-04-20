@@ -11,6 +11,13 @@ export interface Genre {
 interface MovieWithCategories extends Omit<InsertMovie, 'id'> {
   id: number;
   categories: string[];
+  cast?: {
+    id: number;
+    name: string;
+    character: string;
+    profilePath: string | null;
+  }[];
+  backdropUrl?: string | null;
 }
 
 const API_KEY = process.env.TMDB_API_KEY;
