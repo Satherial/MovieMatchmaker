@@ -1,8 +1,8 @@
 import { 
   users, type User, type InsertUser,
   movies, type Movie, type InsertMovie,
-  categories, type Category, type InsertCategory,
-  movieCategories, type MovieCategory, type InsertMovieCategory,
+  categories, type Genre, type InsertGenre,
+  movieCategories, type MovieGenre, type InsertMovieGenre,
   watchHistory, type WatchHistory, type InsertWatchHistory
 } from "@shared/schema";
 
@@ -25,15 +25,15 @@ export interface IStorage {
   getMovie(id: number): Promise<Movie | undefined>;
   createMovie(movie: InsertMovie): Promise<Movie>;
   
-  // Category operations
-  getCategories(): Promise<Category[]>;
-  getCategory(id: number): Promise<Category | undefined>;
-  getCategoryByName(name: string): Promise<Category | undefined>;
-  createCategory(category: InsertCategory): Promise<Category>;
+  // Genre operations (renamed from Category)
+  getCategories(): Promise<Genre[]>;
+  getCategory(id: number): Promise<Genre | undefined>;
+  getCategoryByName(name: string): Promise<Genre | undefined>;
+  createCategory(genre: InsertGenre): Promise<Genre>;
   
-  // Movie Category operations
-  getMovieCategories(movieId: number): Promise<MovieCategory[]>;
-  addCategoryToMovie(movieCategory: InsertMovieCategory): Promise<MovieCategory>;
+  // Movie Genre operations (renamed from Movie Category)
+  getMovieCategories(movieId: number): Promise<MovieGenre[]>;
+  addCategoryToMovie(movieGenre: InsertMovieGenre): Promise<MovieGenre>;
   
   // Watch History operations
   getWatchHistory(): Promise<WatchHistory[]>;

@@ -2,7 +2,7 @@ import { FC, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
-import CategoryFilter from "@/components/category-filter";
+import GenreFilter from "@/components/genre-filter";
 import WatchHistory from "@/components/watch-history";
 import MovieCard from "@/components/movie-card";
 import ConfirmationModal from "@/components/confirmation-modal";
@@ -110,7 +110,7 @@ const Home: FC = () => {
           <div className="flex flex-col md:flex-row">
             {/* Sidebar */}
             <div className="md:w-1/4 md:pr-8 mb-6 md:mb-0">
-              <CategoryFilter
+              <GenreFilter
                 categories={categories}
                 filters={filters}
                 onFilterChange={handleFilterChange}

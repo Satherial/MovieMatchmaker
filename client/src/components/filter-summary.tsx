@@ -28,12 +28,12 @@ const FilterSummary: FC<FilterSummaryProps> = ({
     <div className="flex flex-wrap gap-2 mb-6 items-center">
       <span className="text-sm text-gray-600">Filters:</span>
       
-      {/* Category filters */}
+      {/* Genre filters */}
       {filters.categories.map(catId => {
-        const category = categories.find(c => c.id === catId);
+        const genre = categories.find(c => c.id === catId);
         return (
           <span key={catId} className="bg-primary-100 text-primary-800 text-xs px-3 py-1 rounded-full flex items-center">
-            {category?.name || catId}
+            {genre?.name || catId}
             <button 
               className="ml-1 text-primary-600"
               onClick={() => onRemoveFilter('categories', catId)}
