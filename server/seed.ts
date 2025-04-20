@@ -4,6 +4,7 @@ import {
 } from '@shared/schema';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
+import { sql } from 'drizzle-orm';
 
 const scryptAsync = promisify(scrypt);
 
@@ -18,7 +19,18 @@ async function seed() {
   console.log('Seeding database with initial data...');
   
   try {
-    // Clear existing data
+    // Check if we already have data
+    const [userCount] = await db
+      .select({ count: sql`count(*)` })
+      .from(users);
+      
+    // If there's existing data, skip seeding
+    if (userCount && parseInt(userCount.count.toString()) > 0) {
+      console.log('Database already contains users, skipping full re-seed');
+      return;
+    }
+    
+    // Only clear existing data if we're starting fresh
     await db.delete(watchHistory);
     await db.delete(movieCategories);
     await db.delete(movies);
