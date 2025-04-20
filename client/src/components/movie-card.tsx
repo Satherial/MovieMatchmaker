@@ -1,8 +1,10 @@
 import { FC, useState } from "react";
+import { useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import StarRating from "@/components/ui/stars";
 import { Movie } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Info, Eye } from "lucide-react";
 import placeholderImage from "@/assets/movie-placeholder.svg";
 
 interface MovieCardProps {
@@ -12,14 +14,19 @@ interface MovieCardProps {
 
 const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
   const [imageError, setImageError] = useState(false);
+  const [_, navigate] = useLocation();
   
   const handleImageError = () => {
     setImageError(true);
   };
+  
+  const handleViewDetails = () => {
+    navigate(`/movie/${movie.id}`);
+  };
 
   return (
     <Card className="movie-card rounded-lg overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all hover:-translate-y-1">
-      <div className="relative">
+      <div className="relative cursor-pointer" onClick={handleViewDetails}>
         <img 
           src={imageError || !movie.imageUrl ? placeholderImage : movie.imageUrl} 
           alt={movie.title} 
@@ -37,7 +44,7 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
       </div>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-gray-900">{movie.title}</h3>
+          <h3 className="font-semibold text-gray-900 cursor-pointer hover:underline" onClick={handleViewDetails}>{movie.title}</h3>
           <span className="text-xs bg-gray-100 rounded-md px-2 py-1">{movie.year}</span>
         </div>
         <div className="flex flex-wrap gap-1 mb-3">
@@ -48,12 +55,21 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
           ))}
         </div>
         <p className="text-sm text-gray-600 mb-4 line-clamp-2">{movie.description}</p>
-        <Button 
-          className="w-full"
-          onClick={() => onWatchClick(movie)}
-        >
-          I'll Watch This
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button 
+            variant="outline"
+            className="w-full"
+            onClick={handleViewDetails}
+          >
+            <Info size={16} className="mr-1" /> Details
+          </Button>
+          <Button 
+            className="w-full"
+            onClick={() => onWatchClick(movie)}
+          >
+            <Eye size={16} className="mr-1" /> Watch
+          </Button>
+        </div>
       </div>
     </Card>
   );
