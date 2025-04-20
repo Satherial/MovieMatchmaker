@@ -44,8 +44,8 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private movies: Map<number, Movie>;
-  private categories: Map<number, Category>;
-  private movieCategories: Map<number, MovieCategory>;
+  private categories: Map<number, Genre>;
+  private movieCategories: Map<number, MovieGenre>;
   private watchHistory: Map<number, WatchHistory>;
   
   private userCounter: number;
@@ -123,16 +123,16 @@ export class MemStorage implements IStorage {
     }
     
     // Apply minimum rating filter
-    if (filters.minRating) {
+    if (filters.minRating !== undefined) {
       movies = movies.filter(movie => movie.rating >= filters.minRating);
     }
     
     // Apply year range filter
-    if (filters.yearFrom && filters.yearFrom !== 0) {
+    if (filters.yearFrom !== undefined && filters.yearFrom !== 0) {
       movies = movies.filter(movie => movie.year >= filters.yearFrom);
     }
     
-    if (filters.yearTo && filters.yearTo !== 0) {
+    if (filters.yearTo !== undefined && filters.yearTo !== 0) {
       movies = movies.filter(movie => movie.year <= filters.yearTo);
     }
     
@@ -173,40 +173,40 @@ export class MemStorage implements IStorage {
     return movie;
   }
   
-  // Category operations
-  async getCategories(): Promise<Category[]> {
+  // Genre operations
+  async getCategories(): Promise<Genre[]> {
     return Array.from(this.categories.values());
   }
   
-  async getCategory(id: number): Promise<Category | undefined> {
+  async getCategory(id: number): Promise<Genre | undefined> {
     return this.categories.get(id);
   }
   
-  async getCategoryByName(name: string): Promise<Category | undefined> {
+  async getCategoryByName(name: string): Promise<Genre | undefined> {
     return Array.from(this.categories.values()).find(
-      (category) => category.name.toLowerCase() === name.toLowerCase(),
+      (genre) => genre.name.toLowerCase() === name.toLowerCase(),
     );
   }
   
-  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+  async createCategory(insertGenre: InsertGenre): Promise<Genre> {
     const id = this.categoryCounter++;
-    const category: Category = { ...insertCategory, id };
-    this.categories.set(id, category);
-    return category;
+    const genre: Genre = { ...insertGenre, id };
+    this.categories.set(id, genre);
+    return genre;
   }
   
-  // Movie Category operations
-  async getMovieCategories(movieId: number): Promise<MovieCategory[]> {
+  // Movie Genre operations
+  async getMovieCategories(movieId: number): Promise<MovieGenre[]> {
     return Array.from(this.movieCategories.values()).filter(
-      (mc) => mc.movieId === movieId,
+      (mg) => mg.movieId === movieId,
     );
   }
   
-  async addCategoryToMovie(insertMovieCategory: InsertMovieCategory): Promise<MovieCategory> {
+  async addCategoryToMovie(insertMovieGenre: InsertMovieGenre): Promise<MovieGenre> {
     const id = this.movieCategoryCounter++;
-    const movieCategory: MovieCategory = { ...insertMovieCategory, id };
-    this.movieCategories.set(id, movieCategory);
-    return movieCategory;
+    const movieGenre: MovieGenre = { ...insertMovieGenre, id };
+    this.movieCategories.set(id, movieGenre);
+    return movieGenre;
   }
   
   // Watch History operations
@@ -220,6 +220,7 @@ export class MemStorage implements IStorage {
   
   async addToWatchHistory(insertHistory: InsertWatchHistory): Promise<WatchHistory> {
     const id = this.watchHistoryCounter++;
+    // Using ISO string for watchedAt which will be correctly handled by the database
     const watchHistory: WatchHistory = {
       ...insertHistory,
       id,
@@ -235,9 +236,9 @@ export class MemStorage implements IStorage {
   
   // Helper to initialize sample data
   private async initializeSampleData() {
-    // Add sample categories
-    const categoryNames = ["Action", "Comedy", "Drama", "Sci-Fi", "Horror", "Romance", "Thriller", "Documentary"];
-    for (const name of categoryNames) {
+    // Add sample genres
+    const genreNames = ["Action", "Comedy", "Drama", "Sci-Fi", "Horror", "Romance", "Thriller", "Documentary"];
+    for (const name of genreNames) {
       await this.createCategory({ name });
     }
     
@@ -354,8 +355,8 @@ export class MemStorage implements IStorage {
       await this.createMovie(movieData);
     }
     
-    // Connect movies to categories
-    const movieCategoryMap: Record<string, string[]> = {
+    // Connect movies to genres
+    const movieGenreMap: Record<string, string[]> = {
       "Superbad": ["Comedy"],
       "Bridesmaids": ["Comedy", "Romance"],
       "Anchorman": ["Comedy"],
@@ -374,16 +375,16 @@ export class MemStorage implements IStorage {
     };
     
     const allMovies = Array.from(this.movies.values());
-    const allCategories = Array.from(this.categories.values());
+    const allGenres = Array.from(this.categories.values());
     
     for (const movie of allMovies) {
-      const categories = movieCategoryMap[movie.title] || [];
-      for (const categoryName of categories) {
-        const category = allCategories.find(c => c.name === categoryName);
-        if (category) {
+      const genres = movieGenreMap[movie.title] || [];
+      for (const genreName of genres) {
+        const genre = allGenres.find(g => g.name === genreName);
+        if (genre) {
           await this.addCategoryToMovie({
             movieId: movie.id,
-            categoryId: category.id
+            categoryId: genre.id
           });
         }
       }
