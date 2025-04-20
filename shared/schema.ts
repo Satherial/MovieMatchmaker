@@ -76,11 +76,17 @@ export const movieCategoriesRelations = relations(movieCategories, ({ one }) => 
 export const watchHistory = pgTable("watch_history", {
   id: serial("id").primaryKey(),
   movieId: integer("movie_id").notNull().references(() => movies.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   watchedAt: timestamp("watched_at").notNull().defaultNow(),
+  rating: integer("rating"), // Optional user rating (1-10)
+  notes: text("notes"), // Optional user notes about the movie
 });
 
 export const insertWatchHistorySchema = createInsertSchema(watchHistory).pick({
   movieId: true,
+  userId: true,
+  rating: true,
+  notes: true,
 });
 
 export type InsertWatchHistory = z.infer<typeof insertWatchHistorySchema>;
@@ -91,19 +97,35 @@ export const watchHistoryRelations = relations(watchHistory, ({ one }) => ({
     fields: [watchHistory.movieId],
     references: [movies.id],
   }),
+  user: one(users, {
+    fields: [watchHistory.userId],
+    references: [users.id],
+  }),
 }));
 
-// Users table (keeping from existing schema)
+// Users table (enhanced with profile information)
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email").unique(),
+  fullName: text("full_name"),
+  avatarUrl: text("avatar_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  preferences: text("preferences"), // JSON string to store user preferences
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  fullName: true,
+  avatarUrl: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const usersRelations = relations(users, ({ many }) => ({
+  watchHistory: many(watchHistory),
+}));

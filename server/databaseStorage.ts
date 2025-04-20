@@ -10,6 +10,77 @@ import {
 import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
+  // User profile operations
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+  
+  async saveUserPreferences(userId: number, preferences: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ preferences })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+  
+  async getUserPreferences(userId: number): Promise<string | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+    
+    return user ? user.preferences : null;
+  }
+  
+  // User-specific watch history operations
+  async getUserWatchedMovieIds(userId: number): Promise<number[]> {
+    const result = await db
+      .select({ movieId: watchHistory.movieId })
+      .from(watchHistory)
+      .where(eq(watchHistory.userId, userId));
+    
+    return result.map(item => item.movieId);
+  }
+  
+  // User recommendations based on watch history
+  async getRecommendedMovies(userId: number, limit: number = 10): Promise<Movie[]> {
+    // 1. Get user's watch history
+    const watchedMovies = await this.getWatchHistory(userId);
+    const watchedMovieIds = watchedMovies.map(item => item.movieId);
+    
+    // 2. Find the most watched genres by the user
+    const genreCounts: Record<number, number> = {};
+    
+    for (const historyItem of watchedMovies) {
+      const movieGenres = await this.getMovieCategories(historyItem.movieId);
+      
+      for (const genre of movieGenres) {
+        genreCounts[genre.categoryId] = (genreCounts[genre.categoryId] || 0) + 1;
+      }
+    }
+    
+    // Sort genres by count (most popular first)
+    const favoriteGenres = Object.entries(genreCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3) // Take top 3 genres
+      .map(([genreId]) => parseInt(genreId));
+    
+    // 3. Find movies with these genres that the user hasn't watched
+    const recommendedMovies = await this.getMovies({
+      categories: favoriteGenres,
+      excludeIds: watchedMovieIds,
+      minRating: 7.0, // Only high-rated movies
+      sort: 'rating_desc'
+    });
+    
+    return recommendedMovies.slice(0, limit);
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -177,12 +248,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Watch History operations
-  async getWatchHistory(): Promise<WatchHistory[]> {
-    const history = await db
+  async getWatchHistory(userId?: number): Promise<WatchHistory[]> {
+    let query = db
       .select()
       .from(watchHistory)
       .orderBy(desc(watchHistory.watchedAt));
-    return history;
+    
+    // If userId is provided, filter by user
+    if (userId) {
+      query = query.where(eq(watchHistory.userId, userId));
+    }
+    
+    return await query;
   }
 
   async addToWatchHistory(insertHistory: InsertWatchHistory): Promise<WatchHistory> {
@@ -193,7 +270,13 @@ export class DatabaseStorage implements IStorage {
     return watchHistoryEntry;
   }
 
-  async clearWatchHistory(): Promise<void> {
-    await db.delete(watchHistory);
+  async clearWatchHistory(userId?: number): Promise<void> {
+    // If userId is provided, only clear that user's history
+    if (userId) {
+      await db.delete(watchHistory).where(eq(watchHistory.userId, userId));
+    } else {
+      // Otherwise clear all history
+      await db.delete(watchHistory);
+    }
   }
 }

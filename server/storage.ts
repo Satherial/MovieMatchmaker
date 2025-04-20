@@ -8,10 +8,11 @@ import {
 
 // Define storage interface for all needed operations
 export interface IStorage {
-  // User operations (keeping from existing)
+  // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User>;
   
   // Movie operations
   getMovies(filters?: {
@@ -36,9 +37,17 @@ export interface IStorage {
   addCategoryToMovie(movieGenre: InsertMovieGenre): Promise<MovieGenre>;
   
   // Watch History operations
-  getWatchHistory(): Promise<WatchHistory[]>;
+  getWatchHistory(userId?: number): Promise<WatchHistory[]>;
   addToWatchHistory(history: InsertWatchHistory): Promise<WatchHistory>;
-  clearWatchHistory(): Promise<void>;
+  clearWatchHistory(userId?: number): Promise<void>;
+  getUserWatchedMovieIds(userId: number): Promise<number[]>;
+  
+  // User Preferences operations
+  saveUserPreferences(userId: number, preferences: string): Promise<User>;
+  getUserPreferences(userId: number): Promise<string | null>;
+  
+  // User Recommendations operations
+  getRecommendedMovies(userId: number, limit?: number): Promise<Movie[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -71,7 +80,7 @@ export class MemStorage implements IStorage {
     this.initializeSampleData();
   }
   
-  // User operations (keeping from existing)
+  // User operations
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -84,9 +93,98 @@ export class MemStorage implements IStorage {
   
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userCounter++;
-    const user: User = { ...insertUser, id };
+    // Create a complete user object with default values for new fields
+    const user: User = { 
+      ...insertUser, 
+      id,
+      email: insertUser.email || null,
+      fullName: insertUser.fullName || null,
+      avatarUrl: insertUser.avatarUrl || null,
+      createdAt: new Date(),
+      preferences: null 
+    };
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+    const user = await this.getUser(id);
+    if (!user) {
+      throw new Error(`User with id ${id} not found`);
+    }
+    
+    // Update user data
+    const updatedUser = { ...user, ...userData };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async saveUserPreferences(userId: number, preferences: string): Promise<User> {
+    return this.updateUser(userId, { preferences });
+  }
+  
+  async getUserPreferences(userId: number): Promise<string | null> {
+    const user = await this.getUser(userId);
+    return user ? user.preferences : null;
+  }
+  
+  async getUserWatchedMovieIds(userId: number): Promise<number[]> {
+    const history = Array.from(this.watchHistory.values()).filter(
+      item => item.userId === userId
+    );
+    return history.map(item => item.movieId);
+  }
+  
+  async getRecommendedMovies(userId: number, limit: number = 10): Promise<Movie[]> {
+    // Get user's watch history
+    const history = Array.from(this.watchHistory.values()).filter(
+      item => item.userId === userId
+    );
+    const watchedMovieIds = history.map(item => item.movieId);
+    
+    // Collect genre counts
+    const genreCounts: Record<number, number> = {};
+    
+    // For each watched movie, count its genres
+    for (const historyItem of history) {
+      const movie = this.movies.get(historyItem.movieId);
+      if (!movie) continue;
+      
+      // Get categories for this movie
+      const movieCategories = Array.from(this.movieCategories.values())
+        .filter(mc => mc.movieId === historyItem.movieId);
+      
+      for (const mc of movieCategories) {
+        genreCounts[mc.categoryId] = (genreCounts[mc.categoryId] || 0) + 1;
+      }
+    }
+    
+    // Find top genres
+    const favoriteGenres = Object.entries(genreCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([genreId]) => parseInt(genreId));
+    
+    // Find recommendations based on favorite genres
+    let recommendations = Array.from(this.movies.values()).filter(movie => {
+      // Skip already watched movies
+      if (watchedMovieIds.includes(movie.id)) return false;
+      
+      // Include only higher-rated movies
+      if (movie.rating < 7.0) return false;
+      
+      // Check if this movie has any of the user's favorite genres
+      const movieGenres = Array.from(this.movieCategories.values())
+        .filter(mc => mc.movieId === movie.id)
+        .map(mc => mc.categoryId);
+      
+      return favoriteGenres.some(fg => movieGenres.includes(fg));
+    });
+    
+    // Sort by rating (highest first)
+    recommendations.sort((a, b) => b.rating - a.rating);
+    
+    return recommendations.slice(0, limit);
   }
   
   // Movie operations
