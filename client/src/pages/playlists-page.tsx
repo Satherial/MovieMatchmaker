@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Globe, Lock, Pencil, Trash, Film } from "lucide-react";
+import { PlusCircle, Globe, Lock, Pencil, Trash, Film, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
@@ -211,6 +211,12 @@ export default function PlaylistsPage() {
 
   return (
     <Container className="py-8">
+      <div className="flex items-center mb-4">
+        <Button variant="outline" onClick={() => navigate("/")} className="flex items-center">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Movies
+        </Button>
+      </div>
+    
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">My Playlists</h1>
