@@ -556,7 +556,18 @@ export class DatabaseStorage implements IStorage {
       );
     
     if (existingFriendships.length > 0) {
-      throw new Error("Friendship already exists");
+      // Check the status of the existing friendship
+      const existingFriendship = existingFriendships[0];
+      
+      if (existingFriendship.status === "pending") {
+        throw new Error("You already have a pending friend request with this user");
+      } else if (existingFriendship.status === "accepted") {
+        throw new Error("You are already friends with this user");
+      } else if (existingFriendship.status === "rejected") {
+        throw new Error("This friend request was previously rejected");
+      } else {
+        throw new Error("A friendship connection already exists with this user");
+      }
     }
     
     // Create the new friendship
