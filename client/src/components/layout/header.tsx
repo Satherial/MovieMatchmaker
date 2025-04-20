@@ -41,7 +41,7 @@ export default function Header() {
 
   const userInitials = user?.fullName
     ? user.fullName.split(" ").map(n => n[0]).join("").toUpperCase()
-    : user?.username.substring(0, 2).toUpperCase();
+    : user?.username?.substring(0, 2).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -76,120 +76,133 @@ export default function Header() {
           )}
         </div>
 
-        {isMobile ? (
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? <X /> : <Menu />}
-            </Button>
-            
-            {isMenuOpen && (
-              <div className="fixed inset-0 top-16 z-50 bg-background shadow-lg">
-                <nav className="container flex flex-col py-8 gap-4">
-                  <Link 
-                    href="/" 
-                    className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
-                    onClick={closeMenu}
-                  >
-                    <Home size={20} />
-                    Home
-                  </Link>
-                  
-                  <Link 
-                    href="/playlists" 
-                    className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
-                    onClick={closeMenu}
-                  >
-                    <Film size={20} />
-                    My Playlists
-                  </Link>
-                  
-                  <Link 
-                    href="/profile" 
-                    className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
-                    onClick={closeMenu}
-                  >
-                    <User size={20} />
-                    Profile
-                  </Link>
+        {user ? (
+          isMobile ? (
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? <X /> : <Menu />}
+              </Button>
+              
+              {isMenuOpen && (
+                <div className="fixed inset-0 top-16 z-50 bg-background shadow-lg">
+                  <nav className="container flex flex-col py-8 gap-4">
+                    <Link 
+                      href="/" 
+                      className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
+                      onClick={closeMenu}
+                    >
+                      <Home size={20} />
+                      Home
+                    </Link>
+                    
+                    <Link 
+                      href="/playlists" 
+                      className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
+                      onClick={closeMenu}
+                    >
+                      <Film size={20} />
+                      My Playlists
+                    </Link>
+                    
+                    <Link 
+                      href="/profile" 
+                      className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
+                      onClick={closeMenu}
+                    >
+                      <User size={20} />
+                      Profile
+                    </Link>
 
-                  <Link 
-                    href="/admin" 
-                    className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
-                    onClick={closeMenu}
-                  >
-                    <Settings size={20} />
-                    Admin
-                  </Link>
-                  
-                  <Button 
-                    variant="destructive" 
-                    className="mt-4 w-full flex items-center gap-2 justify-center"
-                    onClick={() => {
-                      closeMenu();
-                      handleLogout();
-                    }}
-                  >
-                    <LogOut size={20} />
-                    Sign Out
-                  </Button>
-                </nav>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="relative h-9 w-9 rounded-full" 
-                  aria-label="User menu"
-                >
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={user?.avatarUrl || ""} alt={user?.username || "User"} />
-                    <AvatarFallback>{userInitials}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <div className="flex flex-col space-y-1 p-2">
-                  <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <Link 
+                      href="/admin" 
+                      className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
+                      onClick={closeMenu}
+                    >
+                      <Settings size={20} />
+                      Admin
+                    </Link>
+                    
+                    <Button 
+                      variant="destructive" 
+                      className="mt-4 w-full flex items-center gap-2 justify-center text-white"
+                      onClick={() => {
+                        closeMenu();
+                        handleLogout();
+                      }}
+                    >
+                      <LogOut size={20} />
+                      Sign Out
+                    </Button>
+                  </nav>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/playlists" className="cursor-pointer flex w-full items-center">
-                    <Film className="mr-2 h-4 w-4" />
-                    My Playlists
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="cursor-pointer flex w-full items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin" className="cursor-pointer flex w-full items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Admin
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive cursor-pointer"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="relative h-9 w-9 rounded-full" 
+                    aria-label="User menu"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user?.avatarUrl || ""} alt={user?.username || "User"} />
+                      <AvatarFallback>{userInitials}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex flex-col space-y-1 p-2">
+                    <p className="text-sm font-medium">{user?.fullName || user?.username}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/playlists" className="cursor-pointer flex w-full items-center">
+                      <Film className="mr-2 h-4 w-4" />
+                      My Playlists
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer flex w-full items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="cursor-pointer flex w-full items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Admin
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )
+        ) : (
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="default"
+              className="btn-fix-primary"
+              onClick={() => navigate("/auth")}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign In
+            </Button>
           </div>
         )}
       </div>
