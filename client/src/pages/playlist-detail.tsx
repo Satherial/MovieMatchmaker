@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link, useRoute } from "wouter";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -82,8 +82,8 @@ type Playlist = {
 };
 
 export default function PlaylistDetailPage() {
-  const [, params] = useLocation();
-  const playlistId = params.split("/")[2]; // Extract ID from /playlists/:id
+  const [match, params] = useRoute("/playlists/:id");
+  const playlistId = params?.id;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();

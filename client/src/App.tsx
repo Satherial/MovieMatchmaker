@@ -18,7 +18,7 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Home} />
-      <ProtectedRoute path="/movie/:id" component={MovieDetail} />
+      <ProtectedRoute path="/movies/:id" component={MovieDetail} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/playlists" component={PlaylistsPage} />

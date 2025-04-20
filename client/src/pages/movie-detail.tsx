@@ -17,7 +17,7 @@ import { SocialShare } from "@/components/social-share";
 import { AddToPlaylist } from "@/components/add-to-playlist";
 
 const MovieDetail: FC = () => {
-  const [match, params] = useRoute("/movie/:id");
+  const [match, params] = useRoute("/movies/:id");
   const [_, navigate] = useLocation();
   const [imageError, setImageError] = useState(false);
   
