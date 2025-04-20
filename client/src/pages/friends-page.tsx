@@ -31,11 +31,12 @@ interface User {
   avatarUrl: string | null;
 }
 
-function FriendCard({ friend, onAccept, onReject, onRemove }: { 
+function FriendCard({ friend, onAccept, onReject, onRemove, isRemoving = false }: { 
   friend: Friend;
   onAccept?: () => void;
   onReject?: () => void;
   onRemove?: () => void;
+  isRemoving?: boolean;
 }) {
   const user = friend.friend || { 
     id: friend.friendId, 
@@ -95,10 +96,20 @@ function FriendCard({ friend, onAccept, onReject, onRemove }: {
             variant="outline" 
             size="sm" 
             onClick={onRemove} 
+            disabled={isRemoving}
             title={friend.status === "pending" ? "Cancel Request" : "Remove Friend"}
           >
-            <UserX2Icon className="h-4 w-4 mr-1" /> 
-            {friend.status === "pending" ? "Cancel" : "Remove"}
+            {isRemoving ? (
+              <>
+                <span className="h-4 w-4 mr-1 animate-spin">⏳</span> 
+                {friend.status === "pending" ? "Canceling..." : "Removing..."}
+              </>
+            ) : (
+              <>
+                <UserX2Icon className="h-4 w-4 mr-1" /> 
+                {friend.status === "pending" ? "Cancel" : "Remove"}
+              </>
+            )}
           </Button>
         )}
       </CardFooter>
@@ -349,6 +360,7 @@ export default function FriendsPage() {
                 key={friend.id}
                 friend={friend}
                 onRemove={() => removeFriendMutation.mutate(friend.friendId)}
+                isRemoving={removeFriendMutation.isPending && removeFriendMutation.variables === friend.friendId}
               />
             ))
           )}
@@ -391,6 +403,7 @@ export default function FriendsPage() {
                   key={request.id}
                   friend={request}
                   onRemove={() => removeFriendMutation.mutate(request.friendId)}
+                  isRemoving={removeFriendMutation.isPending && removeFriendMutation.variables === request.friendId}
                 />
               ))}
             </>
