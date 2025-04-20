@@ -4,10 +4,11 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import GenreFilter from "@/components/genre-filter";
 import WatchHistory from "@/components/watch-history";
+import MobileGenreFilter from "@/components/mobile-genre-filter";
+import MobileWatchHistory from "@/components/mobile-watch-history";
 import MovieCard from "@/components/movie-card";
 import ConfirmationModal from "@/components/confirmation-modal";
 import FilterSummary from "@/components/filter-summary";
-import MobileFilterWrapper from "@/components/mobile-filter-wrapper";
 import { Movie, WatchedMovie, Genre, FilterState } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -141,25 +142,22 @@ const Home: FC = () => {
                 />
               </div>
               
-              {/* Mobile version with special wrapper to fix background issues */}
+              {/* Mobile version with completely custom components */}
               <div className="md:hidden">
-                <MobileFilterWrapper className="mb-6 p-4">
-                  <GenreFilter
-                    categories={categories}
-                    filters={filters}
-                    onFilterChange={handleFilterChange}
-                    onApplyFilters={handleApplyFilters}
-                    isLoading={isMoviesLoading}
-                  />
-                </MobileFilterWrapper>
+                <MobileGenreFilter
+                  categories={categories}
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  onApplyFilters={handleApplyFilters}
+                  isLoading={isMoviesLoading}
+                  className="mb-6"
+                />
                 
                 {showHistory && (
-                  <MobileFilterWrapper className="p-4">
-                    <WatchHistory
-                      watchHistory={watchHistory}
-                      isLoading={isHistoryLoading}
-                    />
-                  </MobileFilterWrapper>
+                  <MobileWatchHistory
+                    watchHistory={watchHistory}
+                    isLoading={isHistoryLoading}
+                  />
                 )}
               </div>
             </div>
