@@ -43,16 +43,20 @@ export class DatabaseStorage implements IStorage {
     // Build conditions array for the query
     const conditions = [];
     
-    if (filters.minRating) {
-      conditions.push(gte(movies.rating, filters.minRating));
-    }
+    // The minRating filter should always be applied with a default of 1 if not specified
+    const effectiveMinRating = typeof filters.minRating === 'number' ? filters.minRating : 1;
+    conditions.push(gte(movies.rating, effectiveMinRating));
+    console.log("Applying minimum rating filter:", effectiveMinRating);
 
+    // Apply year filters if specified
     if (filters.yearFrom && filters.yearFrom !== 0) {
       conditions.push(gte(movies.year, filters.yearFrom));
+      console.log("Applying year from filter:", filters.yearFrom);
     }
 
     if (filters.yearTo && filters.yearTo !== 0) {
       conditions.push(lte(movies.year, filters.yearTo));
+      console.log("Applying year to filter:", filters.yearTo);
     }
     
     // Execute the query with all conditions
@@ -63,23 +67,30 @@ export class DatabaseStorage implements IStorage {
       result = await db.select().from(movies);
     }
 
-    // Filter by categories after fetching (since it requires a join/subquery)
+    // Filter by categories/genres using SQL IN clause
     if (filters.categories && filters.categories.length > 0) {
-      console.log("Filtering by categories:", filters.categories);
+      console.log("Filtering by categories/genres:", filters.categories);
       
       try {
-        // Get all movies that have any of the specified categories
-        const categoryMovies = await db
-          .select({ movieId: movieCategories.movieId })
+        // Use a raw SQL IN clause for filtering by category IDs
+        const categoryIdsStr = filters.categories.join(',');
+        const movieQuery = db
+          .select({ 
+            movieId: movieCategories.movieId 
+          })
           .from(movieCategories)
-          .where(sql`${movieCategories.categoryId} IN (${filters.categories.join(', ')})`);
+          .where(sql`${movieCategories.categoryId} IN (${categoryIdsStr})`);
         
+        const categoryMovies = await movieQuery;
+        
+        // Create a set of movie IDs for faster lookup
         const movieIdsWithCategories = new Set(categoryMovies.map(cm => cm.movieId));
-        console.log("Movies with specified categories:", Array.from(movieIdsWithCategories));
+        console.log("Movies with specified genres:", Array.from(movieIdsWithCategories));
         
+        // Filter the results to only include movies with the specified categories
         result = result.filter(movie => movieIdsWithCategories.has(movie.id));
       } catch (error) {
-        console.error("Error filtering by categories:", error);
+        console.error("Error filtering by categories/genres:", error);
         // Don't filter if there's an error with the query
       }
     }

@@ -49,9 +49,9 @@ const GenreFilter: FC<GenreFilterProps> = ({
         <CardTitle className="text-lg font-semibold text-gray-800">Find Your Movie</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Categories */}
+        {/* Genres */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Categories</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Genres</h3>
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
               <button
