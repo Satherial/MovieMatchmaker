@@ -125,6 +125,16 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
     return res.status(201).json(friendship);
   } catch (error) {
     console.error("Error creating friendship:", error);
+    
+    // Provide more informative error messages
+    if (error instanceof Error) {
+      if (error.message === "Friendship already exists") {
+        return res.status(400).json({ 
+          error: "A friendship or request already exists with this user" 
+        });
+      }
+    }
+    
     return res.status(500).json({ error: "Failed to send friend request" });
   }
 });
