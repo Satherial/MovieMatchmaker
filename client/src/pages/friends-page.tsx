@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { CheckIcon, UserPlusIcon, XIcon, UserX2Icon, Users2Icon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { extractErrorMessage } from "@/lib/error-handler";
 
 interface Friend {
   id: number;
@@ -212,15 +213,8 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
-      // Extract just the error message without any JSON formatting
-      let errorMessage = "Failed to send friend request";
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
       toast({
-        description: errorMessage,
+        description: extractErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -242,15 +236,8 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
-      // Extract just the error message without any JSON formatting
-      let errorMessage = "Failed to accept friend request";
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
       toast({
-        description: errorMessage,
+        description: extractErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -272,15 +259,8 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
-      // Extract just the error message without any JSON formatting
-      let errorMessage = "Failed to reject friend request";
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
       toast({
-        description: errorMessage,
+        description: extractErrorMessage(error),
         variant: "destructive",
       });
     },
@@ -302,15 +282,8 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
-      // Extract just the error message without any JSON formatting
-      let errorMessage = "Failed to remove friend";
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
       toast({
-        description: errorMessage,
+        description: extractErrorMessage(error),
         variant: "destructive",
       });
     },
