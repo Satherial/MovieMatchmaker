@@ -239,8 +239,7 @@ const MovieDetail: FC = () => {
                 </ScrollArea>
               ) : (
                 <div className="text-muted-foreground text-sm p-4 border rounded-md bg-muted/20">
-                  <p>Cast information is not available for this movie. This data is only available for movies imported directly from TMDb.</p>
-                  <p className="mt-2">Try searching for this movie in the Admin section to import enhanced details.</p>
+                  <p>Cast information is not available for this movie.</p>
                 </div>
               )}
             </div>
@@ -257,8 +256,7 @@ const MovieDetail: FC = () => {
                 </div>
               ) : (
                 <div className="text-muted-foreground text-sm p-4 border rounded-md bg-muted/20">
-                  <p>Additional images are not available for this movie. This data is only available for movies imported directly from TMDb.</p>
-                  <p className="mt-2">Try searching for this movie in the Admin section to import enhanced details.</p>
+                  <p>Additional images are not available for this movie.</p>
                 </div>
               )}
             </div>
