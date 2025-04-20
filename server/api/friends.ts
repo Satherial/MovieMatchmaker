@@ -8,7 +8,7 @@ const friendsRouter = Router();
 // Get current user's friends
 friendsRouter.get("/", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const userId = req.user!.id;
@@ -20,7 +20,7 @@ friendsRouter.get("/", async (req: Request, res: Response) => {
 // Get incoming friend requests
 friendsRouter.get("/requests", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const userId = req.user!.id;
@@ -32,7 +32,7 @@ friendsRouter.get("/requests", async (req: Request, res: Response) => {
 // Get outgoing friend requests
 friendsRouter.get("/sent-requests", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const userId = req.user!.id;
@@ -51,12 +51,12 @@ friendsRouter.get("/sent-requests", async (req: Request, res: Response) => {
 // Search for users to add as friends
 friendsRouter.get("/search", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const query = req.query.q as string;
   if (!query || query.length < 3) {
-    return res.status(400).json({ error: "Search query must be at least 3 characters" });
+    return res.status(400).send("Search query must be at least 3 characters");
   }
 
   const users = await storage.searchUsers(query, req.user!.id);
@@ -66,14 +66,14 @@ friendsRouter.get("/search", async (req: Request, res: Response) => {
 // Send a friend request
 friendsRouter.post("/request", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const userId = req.user!.id;
   const friendId = z.object({ friendId: z.number() }).parse(req.body).friendId;
   
   if (userId === friendId) {
-    return res.status(400).json({ error: "You cannot send a friend request to yourself" });
+    return res.status(400).send("You cannot send a friend request to yourself");
   }
 
   try {
@@ -138,7 +138,7 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
 // Accept a friend request
 friendsRouter.post("/accept/:id", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const userId = req.user!.id;
