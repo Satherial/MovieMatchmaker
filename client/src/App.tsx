@@ -11,6 +11,9 @@ import ProfilePage from "@/pages/profile-page";
 import AdminPage from "@/pages/admin-page";
 import PlaylistsPage from "@/pages/playlists-page";
 import PlaylistDetailPage from "@/pages/playlist-detail";
+import FriendsPage from "@/pages/friends-page";
+import SharedPlaylistsPage from "@/pages/shared-playlists-page";
+import SharedWatchesPage from "@/pages/shared-watches-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -23,6 +26,9 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/playlists" component={PlaylistsPage} />
       <ProtectedRoute path="/playlists/:id" component={PlaylistDetailPage} />
+      <ProtectedRoute path="/friends" component={FriendsPage} />
+      <ProtectedRoute path="/shared-playlists" component={SharedPlaylistsPage} />
+      <ProtectedRoute path="/shared-watches" component={SharedWatchesPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
