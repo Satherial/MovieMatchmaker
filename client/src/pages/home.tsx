@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
+import AnimatedGenreTransition from "@/components/animated-genre-transition";
 
 const Home: FC = () => {
   const isMobile = useIsMobile();
@@ -107,6 +109,9 @@ const Home: FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
+      
+      {/* Genre transition animation */}
+      <AnimatedGenreTransition genreName={null} />
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -227,12 +232,25 @@ const Home: FC = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {movies.map((movie) => (
-                        <MovieCard
+                      {movies.map((movie, index) => (
+                        <motion.div
                           key={movie.id}
-                          movie={movie}
-                          onWatchClick={handleWatchClick}
-                        />
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ 
+                            opacity: 1, 
+                            y: 0,
+                            transition: { 
+                              delay: index * 0.05, // Staggered effect
+                              duration: 0.5,
+                              ease: "easeOut"
+                            }
+                          }}
+                        >
+                          <MovieCard
+                            movie={movie}
+                            onWatchClick={handleWatchClick}
+                          />
+                        </motion.div>
                       ))}
                     </div>
                   )}

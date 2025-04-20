@@ -48,3 +48,97 @@ button.bg-destructive {
   background-color: #ef4444 !important;
   color: white !important;
 }
+
+/* Genre transition theme classes */
+body {
+  transition: background-color 0.5s ease-in-out;
+}
+
+/* Genre theme styles */
+.theme-action .movie-card {
+  box-shadow: 0 4px 12px rgba(255, 87, 51, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-action .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-action .genre-chip:hover {
+  background-color: rgba(255, 87, 51, 0.1) !important;
+}
+
+.theme-comedy .movie-card {
+  box-shadow: 0 4px 12px rgba(255, 195, 0, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-comedy .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-comedy .genre-chip:hover {
+  background-color: rgba(255, 195, 0, 0.1) !important;
+}
+
+.theme-drama .movie-card {
+  box-shadow: 0 4px 12px rgba(136, 78, 160, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-drama .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-drama .genre-chip:hover {
+  background-color: rgba(136, 78, 160, 0.1) !important;
+}
+
+.theme-sci-fi .movie-card {
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-sci-fi .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-sci-fi .genre-chip:hover {
+  background-color: rgba(52, 152, 219, 0.1) !important;
+}
+
+.theme-horror .movie-card {
+  box-shadow: 0 4px 12px rgba(46, 64, 83, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-horror .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-horror .genre-chip:hover {
+  background-color: rgba(46, 64, 83, 0.1) !important;
+}
+
+.theme-romance .movie-card {
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-romance .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-romance .genre-chip:hover {
+  background-color: rgba(233, 30, 99, 0.1) !important;
+}
+
+.theme-thriller .movie-card {
+  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-thriller .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-thriller .genre-chip:hover {
+  background-color: rgba(192, 57, 43, 0.1) !important;
+}
+
+.theme-documentary .movie-card {
+  box-shadow: 0 4px 12px rgba(22, 160, 133, 0.15);
+  transition: all 0.3s ease;
+}
+.theme-documentary .genre-chip {
+  transition: all 0.3s ease;
+}
+.theme-documentary .genre-chip:hover {
+  background-color: rgba(22, 160, 133, 0.1) !important;
+}

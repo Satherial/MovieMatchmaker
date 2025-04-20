@@ -16,6 +16,7 @@ import SharedPlaylistsPage from "@/pages/shared-playlists-page";
 import SharedWatchesPage from "@/pages/shared-watches-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { GenreTransitionProvider } from "@/contexts/genre-transition-context";
 
 function Router() {
   return (
@@ -39,10 +40,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <GenreTransitionProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </GenreTransitionProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
