@@ -6,6 +6,12 @@ export interface Movie {
   rating: number;
   imageUrl: string;
   categories: string[]; // Keep this as 'categories' for now for backend compatibility
+  director?: string;
+  actors?: string;
+  duration?: number;
+  country?: string;
+  language?: string;
+  releaseDate?: string;
 }
 
 export interface WatchedMovie {
