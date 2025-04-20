@@ -8,7 +8,6 @@ import {
   insertPlaylistItemSchema 
 } from "@shared/schema";
 import { setupAuth } from "./auth";
-import * as tmdbClient from "./tmdb-client";
 import { setupMCPRoutes } from "./mcp/routes";
 
 // Import our new API routers
@@ -369,23 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // TMDb API integration endpoints
 
-  // Search movies from TMDb
-  apiRouter.get("/tmdb/search", async (req, res) => {
-    try {
-      const query = req.query.q as string;
-      const page = req.query.page ? parseInt(req.query.page as string) : 1;
-      
-      if (!query) {
-        return res.status(400).json({ error: "Search query is required" });
-      }
-      
-      const results = await tmdbClient.searchMovies(query, page);
-      res.json(results);
-    } catch (error) {
-      console.error("Error searching movies:", error);
-      res.status(500).json({ error: "Failed to search movies" });
-    }
-  });
+
   
   // Get movie details from TMDb
   apiRouter.get("/tmdb/movies/:id", async (req, res) => {
