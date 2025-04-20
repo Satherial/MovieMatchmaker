@@ -261,17 +261,42 @@ const Home: FC = () => {
                   {/* Pagination - Simplified for this implementation */}
                   {movies.length > 0 && (
                     <div className="mt-8 flex justify-center">
-                      <nav className="flex items-center space-x-1">
-                        <a href="#" className="px-3 py-1 rounded-md text-sm border border-gray-300 text-gray-500 hover:bg-gray-50">
-                          <i className="fas fa-chevron-left"></i>
+                      <nav className="flex items-center space-x-2">
+                        {/* Previous page button */}
+                        <a href="#" className="px-3 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-500 hover:bg-gray-50 shadow-sm">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
                         </a>
-                        <a href="#" className="px-3 py-1 rounded-md text-sm border border-primary-600 bg-primary-600 text-white">1</a>
-                        <a href="#" className="px-3 py-1 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-50">2</a>
-                        <a href="#" className="px-3 py-1 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-50">3</a>
-                        <span className="px-3 py-1 text-sm text-gray-500">...</span>
-                        <a href="#" className="px-3 py-1 rounded-md text-sm border border-gray-300 text-gray-700 hover:bg-gray-50">10</a>
-                        <a href="#" className="px-3 py-1 rounded-md text-sm border border-gray-300 text-gray-500 hover:bg-gray-50">
-                          <i className="fas fa-chevron-right"></i>
+                        
+                        {/* Current page - with high contrast, bold text, and box shadow */}
+                        <a href="#" className="px-4 py-2 rounded-md text-sm font-bold border-2 border-primary bg-primary text-white shadow-md">
+                          1
+                        </a>
+                        
+                        {/* Other pages */}
+                        <a href="#" className="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400">
+                          2
+                        </a>
+                        <a href="#" className="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400">
+                          3
+                        </a>
+                        
+                        {/* Ellipsis */}
+                        <span className="px-3 py-2 text-sm text-gray-500">
+                          ...
+                        </span>
+                        
+                        {/* Last page */}
+                        <a href="#" className="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400">
+                          10
+                        </a>
+                        
+                        {/* Next page button */}
+                        <a href="#" className="px-3 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-500 hover:bg-gray-50 shadow-sm">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </a>
                       </nav>
                     </div>
