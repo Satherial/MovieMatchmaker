@@ -2,16 +2,22 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogOut } from "lucide-react";
+import { Loader2, LogOut, History, Film } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { WatchedMovie, Movie } from "@/lib/types";
+import { format } from "date-fns";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Link } from "wouter";
 
 // Profile update schema
 const profileSchema = z.object({
@@ -50,6 +56,41 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
+  
+  // Fetch user watch history
+  const { data: watchHistory = [], isLoading: isHistoryLoading } = useQuery<WatchedMovie[]>({
+    queryKey: ['/api/watch-history'],
+    enabled: !!user, // Only fetch if user is logged in
+  });
+
+  // Get recommended movies based on watch history
+  const { data: recommendedMovies = [], isLoading: isRecommendationsLoading } = useQuery<Movie[]>({
+    queryKey: ['/api/recommendations'],
+    enabled: !!user, // Only fetch if user is logged in
+  });
+  
+  // Clear watch history mutation
+  const { mutate: clearHistory } = useMutation({
+    mutationFn: async () => {
+      await apiRequest('DELETE', '/api/watch-history', {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "History Cleared",
+        description: "Your watch history has been cleared successfully."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/watch-history'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/movies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/recommendations'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to clear watch history: ${error.message}`,
+        variant: "destructive"
+      });
+    }
+  });
   
   // If still loading, show loading spinner
   if (isLoading) {
@@ -153,9 +194,13 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="password">Password</TabsTrigger>
+                <TabsTrigger value="history" className="flex items-center gap-1">
+                  <History size={14} />
+                  Watch History
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="profile" className="mt-4">
@@ -309,6 +354,143 @@ export default function ProfilePage() {
                     </div>
                   </form>
                 </Form>
+              </TabsContent>
+              
+              {/* New Watch History Tab */}
+              <TabsContent value="history" className="mt-4">
+                <div className="space-y-6">
+                  {/* Watch History Section */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <History size={18} className="text-primary" />
+                        Your Watch History
+                      </h3>
+                      {watchHistory.length > 0 && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            if (window.confirm("Are you sure you want to clear your watch history? This cannot be undone.")) {
+                              clearHistory();
+                            }
+                          }}
+                          className="text-xs"
+                        >
+                          Clear History
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {isHistoryLoading ? (
+                      <div className="py-6 text-center text-gray-500">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                        <p>Loading watch history...</p>
+                      </div>
+                    ) : watchHistory.length === 0 ? (
+                      <div className="py-6 text-center text-gray-500 border rounded-md">
+                        <Film className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                        <p>You haven't watched any movies yet.</p>
+                        <Link href="/">
+                          <Button variant="link" className="mt-2">Browse movies</Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        <div className="space-y-4">
+                          {watchHistory.map((item) => (
+                            <div key={item.id} className="flex gap-4 pb-4 border-b last:border-b-0">
+                              <div className="flex-shrink-0">
+                                <Link href={`/movie/${item.movieId}`}>
+                                  <img 
+                                    src={item.movie?.imageUrl} 
+                                    alt={item.movie?.title || "Movie"} 
+                                    className="w-16 h-20 object-cover rounded-md hover:opacity-80 transition-opacity cursor-pointer" 
+                                  />
+                                </Link>
+                              </div>
+                              <div className="flex-1">
+                                <Link href={`/movie/${item.movieId}`}>
+                                  <h4 className="text-base font-medium hover:text-primary transition-colors cursor-pointer">
+                                    {item.movie?.title || "Unknown Movie"}
+                                  </h4>
+                                </Link>
+                                <div className="flex flex-wrap gap-1 mt-1 mb-2">
+                                  {item.movie?.categories?.map((category, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {category}
+                                    </Badge>
+                                  ))}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Watched on {format(new Date(item.watchedAt), 'MMM d, yyyy')}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </div>
+                  
+                  {/* Recommendations Section Based on Watch History */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        className="w-5 h-5 text-primary"
+                      >
+                        <path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12" />
+                        <circle cx="17" cy="7" r="5" />
+                      </svg>
+                      Recommendations for You
+                    </h3>
+                    
+                    {isRecommendationsLoading ? (
+                      <div className="py-6 text-center text-gray-500">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                        <p>Finding recommendations for you...</p>
+                      </div>
+                    ) : watchHistory.length === 0 ? (
+                      <div className="py-6 text-center text-gray-500 border rounded-md">
+                        <p>Watch some movies to get personalized recommendations.</p>
+                      </div>
+                    ) : recommendedMovies.length === 0 ? (
+                      <div className="py-6 text-center text-gray-500 border rounded-md">
+                        <p>No recommendations available yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {recommendedMovies.slice(0, 6).map((movie: Movie) => (
+                          <Link key={movie.id} href={`/movie/${movie.id}`}>
+                            <div className="relative group cursor-pointer">
+                              <img 
+                                src={movie.imageUrl} 
+                                alt={movie.title} 
+                                className="w-full aspect-[2/3] object-cover rounded-md group-hover:opacity-75 transition-opacity" 
+                              />
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-md">
+                                <h4 className="text-white text-sm font-medium line-clamp-1">{movie.title}</h4>
+                                <div className="flex items-center mt-1">
+                                  <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  <span className="text-white text-xs ml-1">{movie.rating.toFixed(1)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
