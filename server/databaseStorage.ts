@@ -113,8 +113,14 @@ export class DatabaseStorage implements IStorage {
     yearTo?: number;
     excludeIds?: number[];
     sort?: string;
-  } = {}): Promise<Movie[]> {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ movies: Movie[], totalCount: number, totalPages: number }> {
     console.log("Database getMovies called with filters:", filters);
+    
+    // Set pagination defaults
+    const page = filters.page !== undefined ? filters.page : 1;
+    const limit = filters.limit !== undefined ? filters.limit : 12;
     
     // Build conditions array for the query
     const conditions = [];
@@ -194,7 +200,22 @@ export class DatabaseStorage implements IStorage {
       result.sort((a, b) => b.rating - a.rating);
     }
 
-    return result;
+    // Calculate total count and total pages
+    const totalCount = result.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedMovies = result.slice(startIndex, endIndex);
+    
+    console.log(`Pagination: page ${page}/${totalPages}, showing ${paginatedMovies.length} of ${totalCount} movies`);
+    
+    return {
+      movies: paginatedMovies,
+      totalCount,
+      totalPages
+    };
   }
 
   async getMovie(id: number): Promise<Movie | undefined> {

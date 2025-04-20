@@ -49,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get movies (with filtering)
+  // Get movies (with filtering and pagination)
   apiRouter.get("/movies", async (req, res) => {
     try {
       const query = req.query;
@@ -105,15 +105,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const yearTo = query.yearTo && query.yearTo !== 'Any' ? Number(query.yearTo) : 0;
       const sort = typeof query.sort === 'string' ? query.sort : 'rating_desc';
       
-      // Get filtered movies
-      const movies = await storage.getMovies({
+      // Parse pagination parameters
+      const page = query.page ? parseInt(query.page as string) : 1;
+      const limit = query.limit ? parseInt(query.limit as string) : 12;
+      
+      // Get filtered and paginated movies
+      const result = await storage.getMovies({
         categories: categoryIds.length > 0 ? categoryIds : undefined,
         minRating,
         yearFrom: yearFrom || undefined,
         yearTo: yearTo || undefined,
         excludeIds: watchedMovieIds,
-        sort
+        sort,
+        page,
+        limit
       });
+      
+      const { movies, totalCount, totalPages } = result;
       
       // For each movie, get its categories
       const moviesWithCategories = await Promise.all(
@@ -133,7 +141,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      res.json(moviesWithCategories);
+      // Return movies with pagination metadata
+      res.json({
+        movies: moviesWithCategories,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1
+        }
+      });
     } catch (error) {
       console.error("Error fetching movies:", error);
       res.status(500).json({ error: "Failed to fetch movies" });
