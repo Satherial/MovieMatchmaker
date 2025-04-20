@@ -47,11 +47,11 @@ const GenreFilter: FC<GenreFilterProps> = ({
   };
 
   return (
-    <Card className={`${className} !bg-white`}>
-      <CardHeader className="pb-3">
+    <Card className={`${className} !bg-white border-2 border-gray-200`} style={{ backgroundColor: 'white !important' }}>
+      <CardHeader className="pb-3" style={{ backgroundColor: 'white' }}>
         <CardTitle className="text-lg font-semibold text-gray-800">Find Your Movie</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6" style={{ backgroundColor: 'white' }}>
         {/* Genres */}
         <div>
           <h3 className="text-sm font-medium text-gray-700 mb-2">Genres</h3>
