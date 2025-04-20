@@ -3,7 +3,9 @@ import {
   movies, type Movie, type InsertMovie,
   categories, type Genre, type InsertGenre,
   movieCategories, type MovieGenre, type InsertMovieGenre,
-  watchHistory, type WatchHistory, type InsertWatchHistory
+  watchHistory, type WatchHistory, type InsertWatchHistory,
+  playlists, type Playlist, type InsertPlaylist,
+  playlistItems, type PlaylistItem, type InsertPlaylistItem
 } from "@shared/schema";
 
 // Define storage interface for all needed operations
@@ -48,6 +50,21 @@ export interface IStorage {
   
   // User Recommendations operations
   getRecommendedMovies(userId: number, limit?: number): Promise<Movie[]>;
+  
+  // Playlist operations
+  getUserPlaylists(userId: number): Promise<Playlist[]>;
+  getPlaylist(id: number): Promise<Playlist | undefined>;
+  createPlaylist(playlist: InsertPlaylist): Promise<Playlist>;
+  updatePlaylist(id: number, playlist: Partial<Playlist>): Promise<Playlist>;
+  deletePlaylist(id: number): Promise<void>;
+  
+  // Playlist Items operations
+  getPlaylistItems(playlistId: number): Promise<PlaylistItem[]>; 
+  getPlaylistMovies(playlistId: number): Promise<Movie[]>;
+  addMovieToPlaylist(playlistItem: InsertPlaylistItem): Promise<PlaylistItem>;
+  updatePlaylistItem(id: number, playlistItem: Partial<PlaylistItem>): Promise<PlaylistItem>;
+  removeMovieFromPlaylist(playlistId: number, movieId: number): Promise<void>;
+  reorderPlaylistItems(playlistId: number, itemIds: number[]): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
