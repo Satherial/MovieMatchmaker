@@ -316,11 +316,18 @@ export default function PlaylistDetailPage() {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/playlists">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/playlists">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/">
+                  Back to Movies
+                </Link>
+              </Button>
+            </div>
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-2">
                 {playlist.name}
