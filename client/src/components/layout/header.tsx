@@ -63,6 +63,15 @@ export default function Header() {
               >
                 Home
               </Link>
+              <Link 
+                href="/playlists" 
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location === "/playlists" || location.startsWith("/playlists/") ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                My Playlists
+              </Link>
             </nav>
           )}
         </div>
@@ -88,6 +97,15 @@ export default function Header() {
                   >
                     <Home size={20} />
                     Home
+                  </Link>
+                  
+                  <Link 
+                    href="/playlists" 
+                    className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
+                    onClick={closeMenu}
+                  >
+                    <Film size={20} />
+                    My Playlists
                   </Link>
                   
                   <Link 
@@ -144,6 +162,12 @@ export default function Header() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/playlists" className="cursor-pointer flex w-full items-center">
+                    <Film className="mr-2 h-4 w-4" />
+                    My Playlists
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="cursor-pointer flex w-full items-center">
                     <User className="mr-2 h-4 w-4" />
