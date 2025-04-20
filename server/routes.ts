@@ -648,14 +648,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount the API router under /api
   app.use("/api", apiRouter);
   
-  // Set up MCP routes for LLM interaction
   // Register our social feature routers
   apiRouter.use("/friends", friendsRouter);
   apiRouter.use("/playlist-shares", playlistSharesRouter);
   apiRouter.use("/shared-watches", sharedWatchesRouter);
   
-  // Register MCP routes
-  setupMCPRoutes(apiRouter);
+  // Set up MCP routes for LLM interaction
+  // Register MCP routes under /api/mcp
+  const mcpRouter = setupMCPRoutes(apiRouter);
+  
+  // Also expose MCP routes directly at root level for better LLM access
+  app.use("/mcp", mcpRouter);
   
   // Create and return the HTTP server
   const httpServer = createServer(app);
