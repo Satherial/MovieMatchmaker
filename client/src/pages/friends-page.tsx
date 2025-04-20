@@ -105,10 +105,11 @@ function FriendCard({ friend, onAccept, onReject, onRemove }: {
   );
 }
 
-function SearchUserCard({ user, onAddFriend, isLoading }: { 
+function SearchUserCard({ user, onAddFriend, isLoading, alreadyInvited }: { 
   user: User;
   onAddFriend: () => void;
   isLoading?: boolean;
+  alreadyInvited: boolean;
 }) {
   const initials = user.username.substring(0, 2).toUpperCase();
 
@@ -129,21 +130,31 @@ function SearchUserCard({ user, onAddFriend, isLoading }: {
         </div>
       </CardHeader>
       <CardFooter className="pt-1 flex justify-end">
-        <Button 
-          size="sm" 
-          onClick={onAddFriend} 
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <span className="h-4 w-4 mr-1 animate-spin">⏳</span> Adding...
-            </>
-          ) : (
-            <>
-              <UserPlusIcon className="h-4 w-4 mr-1" /> Add Friend
-            </>
-          )}
-        </Button>
+        {alreadyInvited ? (
+          <Button 
+            size="sm" 
+            variant="outline" 
+            disabled={true}
+          >
+            <CheckIcon className="h-4 w-4 mr-1" /> Invitation Sent
+          </Button>
+        ) : (
+          <Button 
+            size="sm" 
+            onClick={onAddFriend} 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className="h-4 w-4 mr-1 animate-spin">⏳</span> Adding...
+              </>
+            ) : (
+              <>
+                <UserPlusIcon className="h-4 w-4 mr-1" /> Add Friend
+              </>
+            )}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -398,14 +409,22 @@ export default function FriendsPage() {
               <p className="text-muted-foreground">No users found matching "{searchQuery}"</p>
             </div>
           ) : (
-            searchResults.map((user) => (
-              <SearchUserCard
-                key={user.id}
-                user={user}
-                isLoading={sendRequestMutation.isPending && sendRequestMutation.variables === user.id}
-                onAddFriend={() => sendRequestMutation.mutate(user.id)}
-              />
-            ))
+            searchResults.map((user) => {
+              // Check if this user is already in the sent requests
+              const alreadyInvited = sentRequests.some(
+                request => request.friendId === user.id
+              );
+              
+              return (
+                <SearchUserCard
+                  key={user.id}
+                  user={user}
+                  isLoading={sendRequestMutation.isPending && sendRequestMutation.variables === user.id}
+                  onAddFriend={() => sendRequestMutation.mutate(user.id)}
+                  alreadyInvited={alreadyInvited}
+                />
+              );
+            })
           )}
         </TabsContent>
       </Tabs>
