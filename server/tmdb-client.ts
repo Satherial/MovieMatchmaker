@@ -72,6 +72,17 @@ function mapTMDbMovieToAppMovie(tmdbMovie: TMDbMovie, genresList: { id: number; 
     .slice(0, 5)
     .map(actor => actor.name)
     .join(', ') || null;
+    
+  // Extract detailed cast information (up to 10 members)
+  const cast = tmdbMovie.credits?.cast
+    ?.sort((a, b) => a.order - b.order)
+    .slice(0, 10)
+    .map(actor => ({
+      id: actor.id,
+      name: actor.name,
+      character: actor.character,
+      profilePath: actor.profile_path ? `${IMAGE_BASE_URL}${actor.profile_path}` : null
+    })) || [];
   
   // Get genre names either from the movie object or by mapping ids to the genres list
   let genreNames: string[] = [];
@@ -106,9 +117,13 @@ function mapTMDbMovieToAppMovie(tmdbMovie: TMDbMovie, genresList: { id: number; 
     imageUrl: tmdbMovie.poster_path 
       ? `${IMAGE_BASE_URL}${tmdbMovie.poster_path}`
       : 'https://via.placeholder.com/500x750?text=No+Image+Available',
+    backdropUrl: tmdbMovie.backdrop_path
+      ? `${IMAGE_BASE_URL}${tmdbMovie.backdrop_path}`
+      : null,
     rating: Math.round(tmdbMovie.vote_average * 10) / 10, // Convert to 1 decimal place
     director: director,
     actors: actors,
+    cast: cast,
     duration: tmdbMovie.runtime || null,
     language: language,
     country: country,

@@ -1,3 +1,10 @@
+export interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  profilePath?: string;
+}
+
 export interface Movie {
   id: number;
   title: string;
@@ -8,10 +15,12 @@ export interface Movie {
   categories: string[]; // Keep this as 'categories' for now for backend compatibility
   director?: string;
   actors?: string;
+  cast?: CastMember[];
   duration?: number;
   country?: string;
   language?: string;
   releaseDate?: string;
+  backdropUrl?: string;
 }
 
 // MovieWithCategories is used specifically for TMDb integration
