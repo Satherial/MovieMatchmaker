@@ -21,9 +21,7 @@ export function setupMCPRoutes(router: Router) {
   mcpRouter.post("/watch-history", mcpController.addToWatchHistory.bind(mcpController));
   mcpRouter.delete("/watch-history", mcpController.clearWatchHistory.bind(mcpController));
   
-  // TMDb endpoints
-  mcpRouter.post("/tmdb/search", mcpController.searchTMDb.bind(mcpController));
-  mcpRouter.post("/tmdb/import", mcpController.importFromTMDb.bind(mcpController));
+  // TMDb endpoints were removed
   
   // Auth endpoints
   mcpRouter.post("/auth/login", mcpController.login.bind(mcpController));
