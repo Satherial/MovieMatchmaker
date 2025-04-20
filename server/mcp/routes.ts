@@ -21,7 +21,41 @@ export function setupMCPRoutes(router: Router) {
   mcpRouter.post("/watch-history", mcpController.addToWatchHistory.bind(mcpController));
   mcpRouter.delete("/watch-history", mcpController.clearWatchHistory.bind(mcpController));
   
-  // TMDb endpoints were removed
+  // Playlist endpoints
+  mcpRouter.get("/playlists", mcpController.getUserPlaylists.bind(mcpController));
+  mcpRouter.get("/playlists/:id", mcpController.getPlaylist.bind(mcpController));
+  mcpRouter.post("/playlists", mcpController.createPlaylist.bind(mcpController));
+  mcpRouter.put("/playlists/:id", mcpController.updatePlaylist.bind(mcpController));
+  mcpRouter.delete("/playlists/:id", mcpController.deletePlaylist.bind(mcpController));
+  mcpRouter.post("/playlists/add-movie", mcpController.addMovieToPlaylist.bind(mcpController));
+  mcpRouter.delete("/playlists/:playlistId/movies/:movieId", mcpController.removeMovieFromPlaylist.bind(mcpController));
+  mcpRouter.post("/playlists/:id/reorder", mcpController.reorderPlaylistItems.bind(mcpController));
+  
+  // Friend endpoints
+  mcpRouter.get("/friends", mcpController.getFriends.bind(mcpController));
+  mcpRouter.get("/friends/requests", mcpController.getFriendRequests.bind(mcpController));
+  mcpRouter.get("/friends/sent-requests", mcpController.getSentFriendRequests.bind(mcpController));
+  mcpRouter.get("/friends/search", mcpController.searchUsers.bind(mcpController));
+  mcpRouter.post("/friends/request", mcpController.sendFriendRequest.bind(mcpController));
+  mcpRouter.post("/friends/accept/:id", mcpController.acceptFriendRequest.bind(mcpController));
+  mcpRouter.post("/friends/reject/:id", mcpController.rejectFriendRequest.bind(mcpController));
+  mcpRouter.delete("/friends/:friendId", mcpController.deleteFriendship.bind(mcpController));
+  
+  // Playlist sharing endpoints
+  mcpRouter.get("/playlist-shares/:playlistId", mcpController.getPlaylistShares.bind(mcpController));
+  mcpRouter.get("/shared-playlists", mcpController.getSharedPlaylists.bind(mcpController));
+  mcpRouter.get("/public-playlists", mcpController.getPublicPlaylists.bind(mcpController));
+  mcpRouter.post("/playlist-shares", mcpController.sharePlaylist.bind(mcpController));
+  mcpRouter.delete("/playlist-shares/:playlistId/:userId", mcpController.removePlaylistShare.bind(mcpController));
+  
+  // Shared watches endpoints
+  mcpRouter.get("/shared-watches", mcpController.getSharedWatches.bind(mcpController));
+  mcpRouter.post("/shared-watches", mcpController.addSharedWatch.bind(mcpController));
+  mcpRouter.delete("/shared-watches/:id", mcpController.removeSharedWatch.bind(mcpController));
+  
+  // User preferences endpoints
+  mcpRouter.get("/preferences", mcpController.getUserPreferences.bind(mcpController));
+  mcpRouter.put("/preferences", mcpController.updateUserPreferences.bind(mcpController));
   
   // Auth endpoints
   mcpRouter.post("/auth/login", mcpController.login.bind(mcpController));
