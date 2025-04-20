@@ -14,10 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Category, FilterState } from "@/lib/types";
+import { Genre, FilterState } from "@/lib/types";
 
 interface GenreFilterProps {
-  categories: Category[];
+  categories: Genre[];
   filters: FilterState;
   onFilterChange: (name: keyof FilterState, value: any) => void;
   onApplyFilters: () => void;
@@ -25,7 +25,7 @@ interface GenreFilterProps {
 }
 
 const GenreFilter: FC<GenreFilterProps> = ({
-  categories,
+  categories: genres, // Rename locally for clarity
   filters,
   onFilterChange,
   onApplyFilters,
@@ -35,10 +35,10 @@ const GenreFilter: FC<GenreFilterProps> = ({
   const currentYear = new Date().getFullYear();
   const yearOptions = ["Any", ...Array.from({ length: 10 }, (_, i) => (currentYear - i * 10).toString())];
 
-  const handleCategoryToggle = (categoryId: string) => {
-    const newCategories = filters.categories.includes(categoryId)
-      ? filters.categories.filter(id => id !== categoryId)
-      : [...filters.categories, categoryId];
+  const handleGenreToggle = (genreId: string) => {
+    const newCategories = filters.categories.includes(genreId)
+      ? filters.categories.filter(id => id !== genreId)
+      : [...filters.categories, genreId];
     
     onFilterChange('categories', newCategories);
   };
@@ -53,17 +53,17 @@ const GenreFilter: FC<GenreFilterProps> = ({
         <div>
           <h3 className="text-sm font-medium text-gray-700 mb-2">Genres</h3>
           <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
+            {genres.map((genre) => (
               <button
-                key={category.id}
-                className={`category-chip px-3 py-1 text-sm rounded-full transition-colors ${
-                  filters.categories.includes(category.id)
+                key={genre.id}
+                className={`genre-chip px-3 py-1 text-sm rounded-full transition-colors ${
+                  filters.categories.includes(genre.id)
                     ? "bg-primary text-primary-foreground"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                 }`}
-                onClick={() => handleCategoryToggle(category.id)}
+                onClick={() => handleGenreToggle(genre.id)}
               >
-                {category.name}
+                {genre.name}
               </button>
             ))}
           </div>

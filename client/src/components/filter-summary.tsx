@@ -5,14 +5,14 @@ import { X } from "lucide-react";
 
 interface FilterSummaryProps {
   filters: FilterState;
-  categories: { id: string; name: string }[];
+  categories: { id: string; name: string }[];  // Keeping prop name for compatibility
   onRemoveFilter: (type: keyof FilterState, value?: string) => void;
   onClearAllFilters: () => void;
 }
 
 const FilterSummary: FC<FilterSummaryProps> = ({
   filters,
-  categories,
+  categories: genres, // Rename locally to match new terminology
   onRemoveFilter,
   onClearAllFilters,
 }) => {
@@ -30,7 +30,7 @@ const FilterSummary: FC<FilterSummaryProps> = ({
       
       {/* Genre filters */}
       {filters.categories.map(catId => {
-        const genre = categories.find(c => c.id === catId);
+        const genre = genres.find(c => c.id === catId);
         return (
           <span key={catId} className="bg-primary-100 text-primary-800 text-xs px-3 py-1 rounded-full flex items-center">
             {genre?.name || catId}
