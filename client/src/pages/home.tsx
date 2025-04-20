@@ -126,6 +126,7 @@ const Home: FC = () => {
                 filters={filters}
                 onFilterChange={handleFilterChange}
                 onApplyFilters={handleApplyFilters}
+                isLoading={isMoviesLoading}
                 className="sticky top-4 mb-6"
               />
 
@@ -171,8 +172,8 @@ const Home: FC = () => {
                   />
 
                   {isMoviesLoading ? (
-                    <div className="py-12 text-center text-gray-500">
-                      <i className="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                    <div className="py-12 text-center text-gray-500 flex flex-col items-center">
+                      <Loader2 className="h-12 w-12 animate-spin mb-3" />
                       <p>Loading movies...</p>
                     </div>
                   ) : movies.length === 0 ? (
