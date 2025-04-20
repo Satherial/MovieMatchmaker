@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, desc, asc, sql, inArray } from "drizzle-orm";
+import { eq, and, or, gte, lte, desc, asc, sql, inArray } from "drizzle-orm";
 import { db } from "./db";
 import {
   User, InsertUser, users,
@@ -7,7 +7,10 @@ import {
   MovieGenre, InsertMovieGenre, movieCategories,
   WatchHistory, InsertWatchHistory, watchHistory,
   Playlist, InsertPlaylist, playlists,
-  PlaylistItem, InsertPlaylistItem, playlistItems
+  PlaylistItem, InsertPlaylistItem, playlistItems,
+  Friendship, InsertFriendship, friendships,
+  PlaylistShare, InsertPlaylistShare, playlistShares,
+  SharedWatch, InsertSharedWatch, sharedWatches
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -479,5 +482,202 @@ export class DatabaseStorage implements IStorage {
     
     // Update the playlist's updatedAt timestamp
     await this.updatePlaylist(playlistId, {});
+  }
+
+  // Friendship operations
+  async searchUsers(query: string, excludeUserId?: number): Promise<User[]> {
+    // Search for users by username or full name
+    let result = await db
+      .select()
+      .from(users)
+      .where(
+        or(
+          sql`LOWER(${users.username}) LIKE ${`%${query.toLowerCase()}%`}`,
+          sql`LOWER(${users.fullName}) LIKE ${`%${query.toLowerCase()}%`}`
+        )
+      );
+    
+    // Filter out the current user if excludeUserId is provided
+    if (excludeUserId) {
+      result = result.filter(user => user.id !== excludeUserId);
+    }
+    
+    return result;
+  }
+
+  async getFriendships(userId: number, status?: string): Promise<Friendship[]> {
+    let query = db
+      .select()
+      .from(friendships)
+      .where(
+        or(
+          eq(friendships.userId, userId),
+          eq(friendships.friendId, userId)
+        )
+      );
+    
+    // Filter by status if provided
+    if (status) {
+      query = query.where(eq(friendships.status, status));
+    }
+    
+    return await query;
+  }
+
+  async getFriendshipRequests(userId: number): Promise<Friendship[]> {
+    // Get all pending friendship requests where the user is the recipient
+    return db
+      .select()
+      .from(friendships)
+      .where(
+        and(
+          eq(friendships.friendId, userId),
+          eq(friendships.status, "pending")
+        )
+      );
+  }
+
+  async createFriendship(friendship: InsertFriendship): Promise<Friendship> {
+    // Check if this friendship already exists
+    const existingFriendships = await db
+      .select()
+      .from(friendships)
+      .where(
+        or(
+          and(
+            eq(friendships.userId, friendship.userId),
+            eq(friendships.friendId, friendship.friendId)
+          ),
+          and(
+            eq(friendships.userId, friendship.friendId),
+            eq(friendships.friendId, friendship.userId)
+          )
+        )
+      );
+    
+    if (existingFriendships.length > 0) {
+      throw new Error("Friendship already exists");
+    }
+    
+    // Create the new friendship
+    const [newFriendship] = await db
+      .insert(friendships)
+      .values(friendship)
+      .returning();
+    
+    return newFriendship;
+  }
+
+  async updateFriendshipStatus(id: number, status: string): Promise<Friendship> {
+    const [updatedFriendship] = await db
+      .update(friendships)
+      .set({
+        status,
+        updatedAt: new Date()
+      })
+      .where(eq(friendships.id, id))
+      .returning();
+    
+    return updatedFriendship;
+  }
+
+  async deleteFriendship(userId: number, friendId: number): Promise<void> {
+    await db
+      .delete(friendships)
+      .where(
+        or(
+          and(
+            eq(friendships.userId, userId),
+            eq(friendships.friendId, friendId)
+          ),
+          and(
+            eq(friendships.userId, friendId),
+            eq(friendships.friendId, userId)
+          )
+        )
+      );
+  }
+
+  // Playlist Sharing operations
+  async getSharedPlaylists(userId: number): Promise<Playlist[]> {
+    const shares = await db
+      .select({
+        playlistId: playlistShares.playlistId
+      })
+      .from(playlistShares)
+      .where(eq(playlistShares.sharedWithUserId, userId));
+    
+    if (shares.length === 0) {
+      return [];
+    }
+    
+    return db
+      .select()
+      .from(playlists)
+      .where(inArray(playlists.id, shares.map(s => s.playlistId)));
+  }
+
+  async getPublicPlaylists(): Promise<Playlist[]> {
+    return db
+      .select()
+      .from(playlists)
+      .where(eq(playlists.isPublic, true))
+      .orderBy(desc(playlists.updatedAt));
+  }
+
+  async sharePlaylistWithUser(share: InsertPlaylistShare): Promise<PlaylistShare> {
+    const [newShare] = await db
+      .insert(playlistShares)
+      .values(share)
+      .returning();
+    
+    return newShare;
+  }
+
+  async getPlaylistShares(playlistId: number): Promise<PlaylistShare[]> {
+    return db
+      .select()
+      .from(playlistShares)
+      .where(eq(playlistShares.playlistId, playlistId));
+  }
+
+  async removePlaylistShare(playlistId: number, userId: number): Promise<void> {
+    await db
+      .delete(playlistShares)
+      .where(
+        and(
+          eq(playlistShares.playlistId, playlistId),
+          eq(playlistShares.sharedWithUserId, userId)
+        )
+      );
+  }
+
+  // Shared Watching operations
+  async getSharedWatches(userId: number): Promise<SharedWatch[]> {
+    return db
+      .select()
+      .from(sharedWatches)
+      .where(
+        or(
+          eq(sharedWatches.initiatedByUserId, userId),
+          eq(sharedWatches.watchedWithUserId, userId)
+        )
+      )
+      .orderBy(desc(sharedWatches.watchedAt));
+  }
+
+  async addSharedWatch(sharedWatch: InsertSharedWatch): Promise<SharedWatch> {
+    const [newSharedWatch] = await db
+      .insert(sharedWatches)
+      .values(sharedWatch)
+      .returning();
+    
+    return newSharedWatch;
+  }
+
+  async removeSharedWatch(id: number): Promise<void> {
+    await db
+      .delete(sharedWatches)
+      .where(eq(sharedWatches.id, id));
   }
 }
