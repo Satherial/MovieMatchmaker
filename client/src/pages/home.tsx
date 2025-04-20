@@ -122,20 +122,46 @@ const Home: FC = () => {
           <div className="flex flex-col md:flex-row">
             {/* Sidebar */}
             <div className="md:w-1/4 md:pr-8 mb-6 md:mb-0">
-              <GenreFilter
-                categories={categories}
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onApplyFilters={handleApplyFilters}
-                isLoading={isMoviesLoading}
-                className="sticky top-4 mb-6"
-              />
+              {/* Desktop version */}
+              <div className="hidden md:block">
+                <GenreFilter
+                  categories={categories}
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  onApplyFilters={handleApplyFilters}
+                  isLoading={isMoviesLoading}
+                  className="sticky top-4 mb-6"
+                />
 
-              <WatchHistory
-                watchHistory={watchHistory}
-                isLoading={isHistoryLoading}
-                className={`md:block ${showHistory ? 'block' : 'hidden'}`}
-              />
+                <WatchHistory
+                  watchHistory={watchHistory}
+                  isLoading={isHistoryLoading}
+                  className="md:block"
+                />
+              </div>
+              
+              {/* Mobile version with solid background container */}
+              <div className="md:hidden">
+                <div className="bg-white shadow-md rounded-lg p-4 mb-6">
+                  <GenreFilter
+                    categories={categories}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    onApplyFilters={handleApplyFilters}
+                    isLoading={isMoviesLoading}
+                    className="mb-6"
+                  />
+                </div>
+                
+                {showHistory && (
+                  <div className="bg-white shadow-md rounded-lg p-4">
+                    <WatchHistory
+                      watchHistory={watchHistory}
+                      isLoading={isHistoryLoading}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Main Content */}
