@@ -103,7 +103,7 @@ export function setupAuth(app: Express) {
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ error: "Username already exists" });
+        return res.status(400).send("Username already exists");
       }
 
       // Create new user with hashed password
@@ -130,7 +130,7 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
-      if (!user) return res.status(401).json({ error: "Invalid credentials" });
+      if (!user) return res.status(401).send("Invalid credentials");
       
       req.login(user, (err) => {
         if (err) return next(err);
@@ -155,7 +155,7 @@ export function setupAuth(app: Express) {
   // Get current user route
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
+      return res.status(401).send("Not authenticated");
     }
     
     // Return user without password
@@ -166,7 +166,7 @@ export function setupAuth(app: Express) {
   // Profile update route
   app.put("/api/profile", (req, res, next) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
+      return res.status(401).send("Not authenticated");
     }
     
     // Update user profile
@@ -187,7 +187,7 @@ export function setupAuth(app: Express) {
   // Password change route
   app.post("/api/change-password", async (req, res, next) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
+      return res.status(401).send("Not authenticated");
     }
     
     try {
@@ -197,7 +197,7 @@ export function setupAuth(app: Express) {
       // Verify current password
       const user = await storage.getUser(userId);
       if (!user || !(await comparePasswords(currentPassword, user.password))) {
-        return res.status(400).json({ error: "Current password is incorrect" });
+        return res.status(400).send("Current password is incorrect");
       }
       
       // Hash new password
@@ -217,6 +217,6 @@ export function setupAuth(app: Express) {
     if (req.isAuthenticated()) {
       return next();
     }
-    res.status(401).json({ error: "Authentication required" });
+    res.status(401).send("Authentication required");
   });
 }
