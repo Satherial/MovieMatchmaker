@@ -88,7 +88,7 @@ const GenreFilter: FC<GenreFilterProps> = ({
                 key={genre.id}
                 className={`genre-chip px-3 py-1 text-sm rounded-full transition-colors ${
                   filters.categories.includes(genre.id)
-                    ? "bg-primary text-primary-foreground"
+                    ? `bg-primary text-primary-foreground active-${genre.name.toLowerCase().replace(/\s+/g, '-')}`
                     : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                 }`}
                 onClick={() => handleGenreToggle(genre.id)}
