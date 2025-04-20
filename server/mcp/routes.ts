@@ -68,4 +68,9 @@ export function setupMCPRoutes(router: Router) {
   
   // Mount the MCP router
   router.use("/mcp", mcpRouter);
+  
+  // The MCP routes can also be accessed directly from the root URL
+  // This is useful for external systems like LLM models that need direct access
+  // to the MCP API without going through the /api prefix
+  return mcpRouter;
 }

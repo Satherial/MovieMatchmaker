@@ -28,7 +28,7 @@ export interface MCPPlaylistListResponse {
 
 export interface MCPPlaylistResponse {
   playlist: Playlist;
-  movies: (Movie & { playlistItem: PlaylistItem | null })[];
+  movies: (Movie & { playlistItem: PlaylistItem | undefined })[];
   creator?: {
     id: number;
     username: string;
