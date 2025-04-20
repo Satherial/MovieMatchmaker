@@ -1,0 +1,17 @@
+<svg width="400" height="225" viewBox="0 0 400 225" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="225" fill="#F3F4F6"/>
+  <rect x="50" y="25" width="300" height="175" rx="4" fill="#E5E7EB" stroke="#D1D5DB" stroke-width="2"/>
+  <path d="M200 105C211.046 105 220 96.0457 220 85C220 73.9543 211.046 65 200 65C188.954 65 180 73.9543 180 85C180 96.0457 188.954 105 200 105Z" fill="#9CA3AF"/>
+  <path d="M240 145C240 122.909 222.091 105 200 105C177.909 105 160 122.909 160 145" stroke="#9CA3AF" stroke-width="10" stroke-linecap="round"/>
+  <path d="M120 55L135 70M135 55L120 70" stroke="#9CA3AF" stroke-width="5" stroke-linecap="round"/>
+  <path d="M265 55L280 70M280 55L265 70" stroke="#9CA3AF" stroke-width="5" stroke-linecap="round"/>
+  <rect x="125" y="165" width="150" height="10" rx="2" fill="#9CA3AF"/>
+  <path d="M87 45L97 45L97 170L87 170L87 45Z" fill="#9CA3AF"/>
+  <path d="M303 45L313 45L313 170L303 170L303 45Z" fill="#9CA3AF"/>
+  <text x="200" y="195" font-family="Arial" font-size="12" text-anchor="middle" fill="#6B7280">No Movie Image</text>
+  <path d="M150 45 L155 53 L160 45" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M170 45 L175 53 L180 45" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M190 45 L195 53 L200 45" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M210 45 L215 53 L220 45" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M230 45 L235 53 L240 45" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
