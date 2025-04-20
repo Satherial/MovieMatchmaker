@@ -401,7 +401,7 @@ export default function ProfilePage() {
                           {watchHistory.map((item) => (
                             <div key={item.id} className="flex gap-4 pb-4 border-b last:border-b-0">
                               <div className="flex-shrink-0">
-                                <Link href={`/movie/${item.movieId}`}>
+                                <Link href={`/movies/${item.movieId}`}>
                                   <img 
                                     src={item.movie?.imageUrl} 
                                     alt={item.movie?.title || "Movie"} 
@@ -410,7 +410,7 @@ export default function ProfilePage() {
                                 </Link>
                               </div>
                               <div className="flex-1">
-                                <Link href={`/movie/${item.movieId}`}>
+                                <Link href={`/movies/${item.movieId}`}>
                                   <h4 className="text-base font-medium hover:text-primary transition-colors cursor-pointer">
                                     {item.movie?.title || "Unknown Movie"}
                                   </h4>
@@ -468,7 +468,7 @@ export default function ProfilePage() {
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {recommendedMovies.slice(0, 6).map((movie: Movie) => (
-                          <Link key={movie.id} href={`/movie/${movie.id}`}>
+                          <Link key={movie.id} href={`/movies/${movie.id}`}>
                             <div className="relative group cursor-pointer">
                               <img 
                                 src={movie.imageUrl} 

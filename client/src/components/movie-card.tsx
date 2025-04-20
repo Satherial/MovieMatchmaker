@@ -21,7 +21,7 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
   };
   
   const handleViewDetails = () => {
-    navigate(`/movie/${movie.id}`);
+    navigate(`/movies/${movie.id}`);
   };
 
   return (
