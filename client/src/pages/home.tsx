@@ -51,7 +51,10 @@ const Home: FC = () => {
     queryKey: [
       '/api/movies', 
       {
-        ...appliedFilters,
+        categories: JSON.stringify(appliedFilters.categories),
+        minRating: appliedFilters.minRating,
+        yearFrom: appliedFilters.yearFrom,
+        yearTo: appliedFilters.yearTo,
         sort: sortOrder,
       }
     ],

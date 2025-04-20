@@ -102,15 +102,21 @@ export class MemStorage implements IStorage {
     
     // Apply category filter
     if (filters.categories && filters.categories.length > 0) {
+      console.log("Applying category filter with:", filters.categories);
+      
       const moviesWithCategories = new Set<number>();
       
       // Get all movie IDs that have any of the specified categories
       const movieCategoryEntries = Array.from(this.movieCategories.values());
+      
       for (const entry of movieCategoryEntries) {
-        if (filters.categories.includes(entry.categoryId)) {
+        // Compare as strings to ensure consistent comparison
+        if (filters.categories.map(String).includes(String(entry.categoryId))) {
           moviesWithCategories.add(entry.movieId);
         }
       }
+      
+      console.log("Movies with matching categories:", Array.from(moviesWithCategories));
       
       // Filter movies to only include those with matching categories
       movies = movies.filter(movie => moviesWithCategories.has(movie.id));

@@ -37,14 +37,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Parse filter parameters
       let categoryIds: number[] = [];
-      if (query.categories && typeof query.categories === 'string' && query.categories !== '[]') {
-        try {
-          categoryIds = JSON.parse(query.categories).map(Number);
-        } catch (e) {
-          // If it fails to parse as JSON array, try as a single value
-          if (query.categories) categoryIds = [Number(query.categories)];
+      if (query.categories) {
+        // Log the raw categories parameter for debugging
+        console.log("Raw categories parameter:", query.categories);
+        
+        if (typeof query.categories === 'string') {
+          try {
+            // First try to parse as JSON
+            const parsed = JSON.parse(query.categories);
+            if (Array.isArray(parsed)) {
+              categoryIds = parsed.map(Number);
+            } else if (parsed) {
+              categoryIds = [Number(parsed)];
+            }
+          } catch (e) {
+            // If it fails to parse as JSON, try as a comma-separated list
+            categoryIds = query.categories.split(',').map(id => Number(id)).filter(id => !isNaN(id));
+          }
+        } else if (Array.isArray(query.categories)) {
+          // Handle case where Express might parse it as an array already
+          categoryIds = query.categories.map(Number);
         }
       }
+      
+      console.log("Processed category IDs:", categoryIds);
       
       const minRating = query.minRating ? Number(query.minRating) : 1;
       const yearFrom = query.yearFrom && query.yearFrom !== 'Any' ? Number(query.yearFrom) : 0;
