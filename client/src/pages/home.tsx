@@ -9,7 +9,7 @@ import MobileWatchHistory from "@/components/mobile-watch-history";
 import MovieCard from "@/components/movie-card";
 import ConfirmationModal from "@/components/confirmation-modal";
 import FilterSummary from "@/components/filter-summary";
-import { Movie, WatchedMovie, Genre, FilterState } from "@/lib/types";
+import { Movie, WatchedMovie, Genre, FilterState, PaginatedMoviesResponse } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -51,8 +51,11 @@ const Home: FC = () => {
     queryKey: ['/api/watch-history'],
   });
 
-  // Fetch movies with filters
-  const { data: movies = [], isLoading: isMoviesLoading } = useQuery<Movie[]>({
+  // State for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Fetch movies with filters and pagination
+  const { data: moviesData, isLoading: isMoviesLoading } = useQuery<PaginatedMoviesResponse>({
     queryKey: [
       '/api/movies', 
       {
@@ -61,15 +64,28 @@ const Home: FC = () => {
         yearFrom: appliedFilters.yearFrom !== "Any" ? appliedFilters.yearFrom : undefined,
         yearTo: appliedFilters.yearTo !== "Any" ? appliedFilters.yearTo : undefined,
         sort: sortOrder,
+        page: currentPage,
+        limit: 12,
       }
     ],
   });
+  
+  // Extract movies and pagination from response or set defaults
+  const movies = moviesData?.movies || [];
+  const pagination = moviesData?.pagination || { 
+    currentPage: 1, 
+    totalPages: 1, 
+    totalCount: 0, 
+    hasNextPage: false, 
+    hasPrevPage: false 
+  };
 
   const handleFilterChange = (name: keyof FilterState, value: any) => {
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
   const handleApplyFilters = () => {
+    setCurrentPage(1); // Reset to first page when applying new filters
     setAppliedFilters(filters);
   };
 
@@ -234,7 +250,7 @@ const Home: FC = () => {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {movies.map((movie, index) => (
+                      {movies.map((movie: Movie, index: number) => (
                         <motion.div
                           key={movie.id}
                           initial={{ opacity: 0, y: 20 }}
@@ -258,46 +274,71 @@ const Home: FC = () => {
                     </div>
                   )}
 
-                  {/* Pagination - Simplified for this implementation */}
-                  {movies.length > 0 && (
+                  {/* Pagination with dynamic pages */}
+                  {movies.length > 0 && pagination.totalPages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <nav className="flex items-center space-x-2">
                         {/* Previous page button */}
-                        <a href="#" className="px-3 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-500 hover:bg-gray-50 shadow-sm">
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={!pagination.hasPrevPage}
+                          className={`px-3 py-2 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-50 shadow-sm ${
+                            pagination.hasPrevPage ? 'text-gray-700 cursor-pointer' : 'text-gray-400 cursor-not-allowed opacity-60'
+                          }`}
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                           </svg>
-                        </a>
+                        </button>
                         
-                        {/* Current page - with high contrast, bold text, and box shadow */}
-                        <a href="#" className="px-4 py-2 rounded-md text-sm font-bold border-2 border-primary bg-primary text-white shadow-md">
-                          1
-                        </a>
-                        
-                        {/* Other pages */}
-                        <a href="#" className="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400">
-                          2
-                        </a>
-                        <a href="#" className="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400">
-                          3
-                        </a>
-                        
-                        {/* Ellipsis */}
-                        <span className="px-3 py-2 text-sm text-gray-500">
-                          ...
-                        </span>
-                        
-                        {/* Last page */}
-                        <a href="#" className="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400">
-                          10
-                        </a>
+                        {/* Generate page buttons */}
+                        {Array.from({ length: pagination.totalPages }).map((_, index) => {
+                          const pageNumber = index + 1;
+                          const isCurrentPage = pageNumber === pagination.currentPage;
+                          
+                          // Define which pages to show
+                          const showPage = 
+                            pageNumber === 1 || // First page
+                            pageNumber === pagination.totalPages || // Last page
+                            Math.abs(pageNumber - pagination.currentPage) <= 1; // Pages near current
+                            
+                          if (!showPage) {
+                            // Show ellipsis for skipped pages
+                            if (pageNumber === 2 || pageNumber === pagination.totalPages - 1) {
+                              return (
+                                <span key={`ellipsis-${pageNumber}`} className="px-3 py-2 text-sm text-gray-500">...</span>
+                              );
+                            }
+                            return null; // Skip this page button
+                          }
+                          
+                          return (
+                            <button 
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(pageNumber)}
+                              className={`px-4 py-2 rounded-md text-sm ${
+                                isCurrentPage 
+                                  ? 'font-bold border-2 border-primary bg-primary text-white shadow-md' 
+                                  : 'font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        })}
                         
                         {/* Next page button */}
-                        <a href="#" className="px-3 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-500 hover:bg-gray-50 shadow-sm">
+                        <button 
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.totalPages))}
+                          disabled={!pagination.hasNextPage}
+                          className={`px-3 py-2 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-50 shadow-sm ${
+                            pagination.hasNextPage ? 'text-gray-700 cursor-pointer' : 'text-gray-400 cursor-not-allowed opacity-60'
+                          }`}
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
-                        </a>
+                        </button>
                       </nav>
                     </div>
                   )}

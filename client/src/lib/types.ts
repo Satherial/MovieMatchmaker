@@ -51,3 +51,16 @@ export interface FilterState {
   yearFrom: string;
   yearTo: string;
 }
+
+export interface PaginationMetadata {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface PaginatedMoviesResponse {
+  movies: Movie[];
+  pagination: PaginationMetadata;
+}
