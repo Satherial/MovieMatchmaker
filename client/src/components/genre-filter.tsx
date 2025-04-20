@@ -15,12 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Genre, FilterState } from "@/lib/types";
+import { Loader2 } from "lucide-react";
 
 interface GenreFilterProps {
   categories: Genre[];
   filters: FilterState;
   onFilterChange: (name: keyof FilterState, value: any) => void;
   onApplyFilters: () => void;
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -29,6 +31,7 @@ const GenreFilter: FC<GenreFilterProps> = ({
   filters,
   onFilterChange,
   onApplyFilters,
+  isLoading = false,
   className = "",
 }) => {
   // Generate year options
@@ -130,8 +133,16 @@ const GenreFilter: FC<GenreFilterProps> = ({
         <Button
           className="w-full"
           onClick={onApplyFilters}
+          disabled={isLoading}
         >
-          Apply Filters
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            "Apply Filters"
+          )}
         </Button>
       </CardContent>
     </Card>
