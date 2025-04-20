@@ -1,0 +1,675 @@
+import { Request, Response } from "express";
+import { storage } from "../storage";
+import { 
+  MCPResponse, 
+  MCPMovieFilterRequest, 
+  MCPAddToWatchHistoryRequest,
+  MCPTMDbSearchRequest,
+  MCPTMDbImportRequest,
+  MCPLoginRequest,
+  MCPRegisterRequest
+} from "./types";
+import { searchMovies, getMovieDetails } from "../tmdb-client";
+import passport from "passport";
+import { hashPassword } from "../auth";
+import { insertUserSchema } from "@shared/schema";
+
+/**
+ * MCP Controller - Handles requests from LLM models
+ * This controller provides a consistent API for AI models to interact with
+ * the movie recommendation system
+ */
+export class MCPController {
+  /**
+   * Get a list of movies with optional filtering
+   */
+  async getMovies(req: Request, res: Response) {
+    try {
+      const filters = req.body as MCPMovieFilterRequest;
+      
+      // Get watched movie IDs if user is authenticated
+      let watchedMovieIds: number[] = [];
+      if (req.isAuthenticated()) {
+        const userId = (req.user as any).id;
+        const userWatchHistory = await storage.getWatchHistory(userId);
+        watchedMovieIds = userWatchHistory.map(item => item.movieId);
+      }
+      
+      // Convert category IDs to numbers
+      const categoryIds = filters.categories?.map(id => parseInt(id)).filter(id => !isNaN(id)) || [];
+      
+      // Convert year strings to numbers, if provided
+      const yearFrom = filters.yearFrom && filters.yearFrom !== 'Any' ? Number(filters.yearFrom) : undefined;
+      const yearTo = filters.yearTo && filters.yearTo !== 'Any' ? Number(filters.yearTo) : undefined;
+      
+      // Get filtered movies
+      const movies = await storage.getMovies({
+        categories: categoryIds.length > 0 ? categoryIds : undefined,
+        minRating: filters.minRating,
+        yearFrom,
+        yearTo,
+        excludeIds: watchedMovieIds,
+        sort: filters.sort
+      });
+      
+      // Enhance each movie with category names
+      const enhancedMovies = await Promise.all(
+        movies.map(async (movie) => {
+          const movieCategories = await storage.getMovieCategories(movie.id);
+          const categories = await Promise.all(
+            movieCategories.map(async (mc) => {
+              const cat = await storage.getCategory(mc.categoryId);
+              return cat ? cat.name : null;
+            })
+          );
+          
+          return {
+            ...movie,
+            categories: categories.filter(Boolean) as string[]
+          };
+        })
+      );
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: {
+          movies: enhancedMovies,
+          totalCount: enhancedMovies.length,
+        }
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error("MCP Error getting movies:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to fetch movies"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Get a single movie by ID
+   */
+  async getMovie(req: Request, res: Response) {
+    try {
+      const movieId = parseInt(req.params.id);
+      
+      if (isNaN(movieId)) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Invalid movie ID"
+        };
+        return res.status(400).json(response);
+      }
+      
+      const movie = await storage.getMovie(movieId);
+      
+      if (!movie) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Movie not found"
+        };
+        return res.status(404).json(response);
+      }
+      
+      // Get movie categories
+      const movieCategories = await storage.getMovieCategories(movie.id);
+      const categories = await Promise.all(
+        movieCategories.map(async (mc) => {
+          const cat = await storage.getCategory(mc.categoryId);
+          return cat ? cat.name : null;
+        })
+      );
+      
+      const enhancedMovie = {
+        ...movie,
+        categories: categories.filter(Boolean) as string[]
+      };
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: enhancedMovie
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error(`MCP Error fetching movie ${req.params.id}:`, error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to fetch movie"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Get a list of all genres/categories
+   */
+  async getGenres(req: Request, res: Response) {
+    try {
+      const genres = await storage.getCategories();
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: {
+          genres
+        }
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error("MCP Error getting genres:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to fetch genres"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Get user watch history
+   */
+  async getWatchHistory(req: Request, res: Response) {
+    try {
+      // Determine which watch history to fetch
+      let watchHistory;
+      if (req.isAuthenticated()) {
+        // If authenticated, get user-specific watch history
+        const userId = (req.user as any).id;
+        watchHistory = await storage.getWatchHistory(userId);
+      } else {
+        // Otherwise get all watch history
+        watchHistory = await storage.getWatchHistory();
+      }
+      
+      // Enhance with movie details
+      const enhancedHistory = await Promise.all(
+        watchHistory.map(async (item) => {
+          const movie = await storage.getMovie(item.movieId);
+          
+          if (movie) {
+            // Get movie categories
+            const movieCategories = await storage.getMovieCategories(item.movieId);
+            const categories = await Promise.all(
+              movieCategories.map(async (mc) => {
+                const cat = await storage.getCategory(mc.categoryId);
+                return cat ? cat.name : null;
+              })
+            );
+            
+            return {
+              ...item,
+              movie: {
+                ...movie,
+                categories: categories.filter(Boolean) as string[]
+              }
+            };
+          }
+          
+          return item;
+        })
+      );
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: {
+          watchHistory: enhancedHistory
+        }
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error("MCP Error fetching watch history:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to fetch watch history"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Add a movie to watch history
+   */
+  async addToWatchHistory(req: Request, res: Response) {
+    try {
+      const { movieId, rating, notes } = req.body as MCPAddToWatchHistoryRequest;
+      
+      if (!movieId) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Movie ID is required"
+        };
+        return res.status(400).json(response);
+      }
+      
+      // Check if movie exists
+      const movie = await storage.getMovie(Number(movieId));
+      if (!movie) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Movie not found"
+        };
+        return res.status(404).json(response);
+      }
+      
+      // Create watch history entry
+      let watchHistoryData: any = {
+        movieId: Number(movieId),
+        watchedAt: new Date(),
+        rating: rating || null,
+        notes: notes || null
+      };
+      
+      // If authenticated, add userId
+      if (req.isAuthenticated()) {
+        watchHistoryData.userId = (req.user as any).id;
+      }
+      
+      // Add to watch history
+      const result = await storage.addToWatchHistory(watchHistoryData);
+      
+      // Return with movie details
+      const watchHistoryWithMovie = {
+        ...result,
+        movie
+      };
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: watchHistoryWithMovie
+      };
+      
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("MCP Error adding to watch history:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to add to watch history"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Clear watch history
+   */
+  async clearWatchHistory(req: Request, res: Response) {
+    try {
+      if (req.isAuthenticated()) {
+        // Clear only the authenticated user's history
+        await storage.clearWatchHistory((req.user as any).id);
+        
+        const response: MCPResponse<any> = {
+          success: true,
+          data: {
+            message: "Your watch history cleared successfully"
+          }
+        };
+        
+        res.status(200).json(response);
+      } else {
+        // Clear all watch history (should be restricted to admins in production)
+        await storage.clearWatchHistory();
+        
+        const response: MCPResponse<any> = {
+          success: true,
+          data: {
+            message: "All watch history cleared successfully"
+          }
+        };
+        
+        res.status(200).json(response);
+      }
+    } catch (error) {
+      console.error("MCP Error clearing watch history:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to clear watch history"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Search TMDb for movies
+   */
+  async searchTMDb(req: Request, res: Response) {
+    try {
+      const { query, page = 1 } = req.body as MCPTMDbSearchRequest;
+      
+      if (!query) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Query parameter is required"
+        };
+        return res.status(400).json(response);
+      }
+      
+      const results = await searchMovies(query, page);
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: results
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error("MCP Error searching TMDb:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to search TMDb"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Import a movie from TMDb
+   */
+  async importFromTMDb(req: Request, res: Response) {
+    try {
+      const { tmdbId } = req.body as MCPTMDbImportRequest;
+      
+      if (!tmdbId) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "TMDb ID is required"
+        };
+        return res.status(400).json(response);
+      }
+      
+      // Get movie details from TMDb
+      const tmdbMovie = await getMovieDetails(tmdbId);
+      
+      // Check if movie already exists in our database by searching for movies with same title
+      const movies = await storage.getMovies();
+      const existingMovie = movies.find(movie => 
+        movie.title.toLowerCase() === tmdbMovie.title.toLowerCase()
+      );
+      
+      if (existingMovie) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Movie already exists in the database",
+          data: existingMovie
+        };
+        return res.status(409).json(response);
+      }
+      
+      // Create movie in our database
+      const newMovie = await storage.createMovie({
+        title: tmdbMovie.title,
+        description: tmdbMovie.description,
+        year: tmdbMovie.year,
+        rating: tmdbMovie.rating,
+        imageUrl: tmdbMovie.imageUrl,
+        director: tmdbMovie.director || null,
+        actors: tmdbMovie.actors || null,
+        duration: tmdbMovie.duration || null,
+        country: tmdbMovie.country || null,
+        language: tmdbMovie.language || null,
+        releaseDate: tmdbMovie.releaseDate || null
+      });
+      
+      // Add genres/categories to the movie
+      // Convert Set to Array to avoid the downlevelIteration issue
+      const categoriesSet = new Set(tmdbMovie.categories);
+      const categories = Array.from(categoriesSet);
+      for (const categoryName of categories) {
+        // Check if category exists, create it if it doesn't
+        let category = await storage.getCategoryByName(categoryName);
+        if (!category) {
+          category = await storage.createCategory({ name: categoryName });
+        }
+        
+        // Link category to movie
+        await storage.addCategoryToMovie({
+          movieId: newMovie.id,
+          categoryId: category.id
+        });
+      }
+      
+      // Get updated movie with categories
+      const movieCategories = await storage.getMovieCategories(newMovie.id);
+      const categoryNames = await Promise.all(
+        movieCategories.map(async (mc) => {
+          const cat = await storage.getCategory(mc.categoryId);
+          return cat ? cat.name : null;
+        })
+      );
+      
+      const enhancedMovie = {
+        ...newMovie,
+        categories: categoryNames.filter(Boolean) as string[]
+      };
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: enhancedMovie
+      };
+      
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("MCP Error importing from TMDb:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to import movie from TMDb"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Login a user
+   */
+  async login(req: Request, res: Response) {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("MCP Authentication error:", err);
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Authentication error"
+        };
+        return res.status(500).json(response);
+      }
+      
+      if (!user) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Invalid username or password"
+        };
+        return res.status(401).json(response);
+      }
+      
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("MCP Login error:", loginErr);
+          const response: MCPResponse<any> = {
+            success: false,
+            error: "Login error"
+          };
+          return res.status(500).json(response);
+        }
+        
+        const response: MCPResponse<any> = {
+          success: true,
+          data: user
+        };
+        
+        return res.status(200).json(response);
+      });
+    })(req, res);
+  }
+  
+  /**
+   * Register a new user
+   */
+  async register(req: Request, res: Response) {
+    try {
+      const { username, password, email, fullName } = req.body as MCPRegisterRequest;
+      
+      // Check if user exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Username already exists"
+        };
+        return res.status(409).json(response);
+      }
+      
+      // Create user
+      const hashedPassword = await hashPassword(password);
+      
+      const userData = {
+        username,
+        password: hashedPassword,
+        email: email || null,
+        fullName: fullName || null,
+        avatarUrl: null
+      };
+      
+      // Validate the user data
+      const validation = insertUserSchema.safeParse(userData);
+      if (!validation.success) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Invalid user data"
+        };
+        return res.status(400).json(response);
+      }
+      
+      const user = await storage.createUser(userData);
+      
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("MCP Registration login error:", err);
+          const response: MCPResponse<any> = {
+            success: true,
+            data: user,
+            error: "User created but auto-login failed"
+          };
+          return res.status(201).json(response);
+        }
+        
+        const response: MCPResponse<any> = {
+          success: true,
+          data: user
+        };
+        
+        return res.status(201).json(response);
+      });
+    } catch (error) {
+      console.error("MCP Registration error:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to register user"
+      };
+      res.status(500).json(response);
+    }
+  }
+  
+  /**
+   * Logout a user
+   */
+  async logout(req: Request, res: Response) {
+    req.logout((err) => {
+      if (err) {
+        console.error("MCP Logout error:", err);
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Logout error"
+        };
+        return res.status(500).json(response);
+      }
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: {
+          message: "Logged out successfully"
+        }
+      };
+      
+      res.status(200).json(response);
+    });
+  }
+  
+  /**
+   * Get current user
+   */
+  async getCurrentUser(req: Request, res: Response) {
+    if (!req.isAuthenticated()) {
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Not authenticated"
+      };
+      return res.status(401).json(response);
+    }
+    
+    const response: MCPResponse<any> = {
+      success: true,
+      data: req.user
+    };
+    
+    res.json(response);
+  }
+  
+  /**
+   * Get recommended movies for a user
+   */
+  async getRecommendedMovies(req: Request, res: Response) {
+    try {
+      if (!req.isAuthenticated()) {
+        const response: MCPResponse<any> = {
+          success: false,
+          error: "Authentication required for recommendations"
+        };
+        return res.status(401).json(response);
+      }
+      
+      const userId = (req.user as any).id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      
+      const recommendedMovies = await storage.getRecommendedMovies(userId, limit);
+      
+      // Enhance each movie with category names
+      const enhancedMovies = await Promise.all(
+        recommendedMovies.map(async (movie) => {
+          const movieCategories = await storage.getMovieCategories(movie.id);
+          const categories = await Promise.all(
+            movieCategories.map(async (mc) => {
+              const cat = await storage.getCategory(mc.categoryId);
+              return cat ? cat.name : null;
+            })
+          );
+          
+          return {
+            ...movie,
+            categories: categories.filter(Boolean) as string[]
+          };
+        })
+      );
+      
+      const response: MCPResponse<any> = {
+        success: true,
+        data: {
+          recommendations: enhancedMovies
+        }
+      };
+      
+      res.json(response);
+    } catch (error) {
+      console.error("MCP Error getting recommendations:", error);
+      const response: MCPResponse<any> = {
+        success: false,
+        error: "Failed to fetch recommendations"
+      };
+      res.status(500).json(response);
+    }
+  }
+}
