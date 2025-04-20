@@ -275,7 +275,7 @@ const MovieDetail: FC = () => {
             
             <div className="flex flex-col md:flex-row gap-3">
               <Button 
-                className="w-full md:w-auto px-8 py-6 text-lg"
+                className="w-full md:w-auto h-12 px-8 text-lg"
                 onClick={() => handleWatchClick(movie)}
               >
                 <Clock className="mr-2 h-5 w-5" /> I'll Watch This
@@ -283,7 +283,7 @@ const MovieDetail: FC = () => {
               
               {user && (
                 <Button 
-                  className="w-full md:w-auto"
+                  className="w-full md:w-auto h-12 text-lg"
                   variant="secondary"
                   onClick={() => setIsSharedWatchModalOpen(true)}
                 >
@@ -291,10 +291,13 @@ const MovieDetail: FC = () => {
                 </Button>
               )}
               
-              <AddToPlaylist
-                movie={movie}
-                variant="outline"
-              />
+              <div className="h-12">
+                <AddToPlaylist
+                  movie={movie}
+                  variant="outline"
+                  className="h-full text-lg"
+                />
+              </div>
             </div>
             
             {movie && (

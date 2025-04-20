@@ -55,9 +55,10 @@ type Movie = {
 interface AddToPlaylistProps {
   movie: Movie;
   variant?: "default" | "outline" | "ghost";
+  className?: string;
 }
 
-export function AddToPlaylist({ movie, variant = "default" }: AddToPlaylistProps) {
+export function AddToPlaylist({ movie, variant = "default", className = "" }: AddToPlaylistProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -143,7 +144,7 @@ export function AddToPlaylist({ movie, variant = "default" }: AddToPlaylistProps
 
   if (!user) {
     return (
-      <Button asChild variant="outline">
+      <Button asChild variant="outline" className={className}>
         <Link href="/auth">
           <PlusCircle className="h-4 w-4 mr-2" />
           Sign in to save
@@ -155,7 +156,7 @@ export function AddToPlaylist({ movie, variant = "default" }: AddToPlaylistProps
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant}>
+        <Button variant={variant} className={className}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Add to Playlist
         </Button>
