@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -15,6 +15,7 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
+import placeholderImage from "@/assets/movie-placeholder.svg";
 
 interface ConfirmationModalProps {
   movie: Movie | null;
@@ -29,6 +30,7 @@ const ConfirmationModal: FC<ConfirmationModalProps> = ({
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [imageError, setImageError] = useState(false);
 
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
@@ -86,9 +88,10 @@ const ConfirmationModal: FC<ConfirmationModalProps> = ({
         <div className="py-3">
           <div className="flex items-start mb-4">
             <img 
-              src={movie.imageUrl} 
+              src={imageError || !movie.imageUrl ? placeholderImage : movie.imageUrl} 
               alt={movie.title} 
               className="w-16 h-24 object-cover rounded-md mr-4"
+              onError={() => setImageError(true)}
             />
             <div>
               <h3 className="font-medium text-lg">{movie.title}</h3>
