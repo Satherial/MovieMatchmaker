@@ -126,13 +126,11 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error creating friendship:", error);
     
-    // Provide more informative error messages
+    // Pass through specific error messages from the database layer
     if (error instanceof Error) {
-      if (error.message === "Friendship already exists") {
-        return res.status(400).json({ 
-          error: "A friendship or request already exists with this user" 
-        });
-      }
+      return res.status(400).json({ 
+        error: error.message 
+      });
     }
     
     return res.status(500).json({ error: "Failed to send friend request" });
@@ -153,6 +151,9 @@ friendsRouter.post("/accept/:id", async (req: Request, res: Response) => {
     return res.json(friendship);
   } catch (error) {
     console.error("Error accepting friendship:", error);
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
     return res.status(500).json({ error: "Failed to accept friend request" });
   }
 });
@@ -171,6 +172,9 @@ friendsRouter.post("/reject/:id", async (req: Request, res: Response) => {
     return res.json(friendship);
   } catch (error) {
     console.error("Error rejecting friendship:", error);
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
     return res.status(500).json({ error: "Failed to reject friend request" });
   }
 });
@@ -189,6 +193,9 @@ friendsRouter.delete("/:friendId", async (req: Request, res: Response) => {
     return res.status(204).end();
   } catch (error) {
     console.error("Error deleting friendship:", error);
+    if (error instanceof Error) {
+      return res.status(400).json({ error: error.message });
+    }
     return res.status(500).json({ error: "Failed to remove friend" });
   }
 });
