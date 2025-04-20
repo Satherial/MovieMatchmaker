@@ -181,7 +181,9 @@ friendsRouter.post("/reject/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error rejecting friendship:", error);
     if (error instanceof Error) {
-      return res.status(400).json({ error: error.message });
+      // Convert technical error message to user-friendly one
+      let friendlyMessage = "Failed to reject friend request";
+      return res.status(400).json({ error: friendlyMessage });
     }
     return res.status(500).json({ error: "Failed to reject friend request" });
   }
@@ -202,7 +204,9 @@ friendsRouter.delete("/:friendId", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting friendship:", error);
     if (error instanceof Error) {
-      return res.status(400).json({ error: error.message });
+      // Convert technical error message to user-friendly one
+      let friendlyMessage = "Failed to remove friend";
+      return res.status(400).json({ error: friendlyMessage });
     }
     return res.status(500).json({ error: "Failed to remove friend" });
   }
