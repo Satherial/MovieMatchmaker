@@ -212,10 +212,10 @@ export default function ProfilePage() {
                       )}
                     />
                     
-                    {field.value && (
+                    {profileForm.watch("avatarUrl") && (
                       <div className="mt-2 flex justify-center">
                         <img 
-                          src={field.value} 
+                          src={profileForm.watch("avatarUrl")} 
                           alt="Avatar preview" 
                           className="w-24 h-24 rounded-full object-cover border" 
                           onError={(e) => {
