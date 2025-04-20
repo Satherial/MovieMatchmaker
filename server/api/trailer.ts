@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import axios from 'axios';
 
-export const movieTrailerRouter = express.Router();
+export const trailerRouter = express.Router();
 
 // Define interface for the TMDB response
 interface TMDBVideo {
@@ -13,7 +13,7 @@ interface TMDBVideo {
 }
 
 // Get movie trailer endpoint
-movieTrailerRouter.get('/trailer', async (req: Request, res: Response) => {
+trailerRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
     
