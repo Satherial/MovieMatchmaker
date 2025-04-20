@@ -14,6 +14,7 @@ import { setupMCPRoutes } from "./mcp/routes";
 import friendsRouter from "./api/friends";
 import playlistSharesRouter from "./api/playlist-shares";
 import sharedWatchesRouter from "./api/shared-watches";
+import { movieTrailerRouter } from "./api/movie-trailer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -652,6 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.use("/friends", friendsRouter);
   apiRouter.use("/playlist-shares", playlistSharesRouter);
   apiRouter.use("/shared-watches", sharedWatchesRouter);
+  apiRouter.use("/movies", movieTrailerRouter);
   
   // Set up MCP routes for LLM interaction
   // Register MCP routes under /api/mcp
