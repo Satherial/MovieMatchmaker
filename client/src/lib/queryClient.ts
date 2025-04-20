@@ -8,6 +8,7 @@ async function throwIfResNotOk(res: Response) {
       // Try to parse as JSON to extract the error message
       const jsonData = JSON.parse(text);
       if (jsonData.error) {
+        // Just return the error message string, not wrapped in JSON
         throw new Error(jsonData.error);
       }
     } catch (parseError) {
