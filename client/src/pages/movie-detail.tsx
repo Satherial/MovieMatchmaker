@@ -211,9 +211,9 @@ const MovieDetail: FC = () => {
               )}
             </div>
             
-            {movie.cast && movie.cast.length > 0 && (
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-3">Full Cast</h2>
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-3">Full Cast</h2>
+              {movie.cast && movie.cast.length > 0 ? (
                 <ScrollArea className="h-72 w-full rounded-md border p-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                     {movie.cast.map((person) => (
@@ -230,8 +230,31 @@ const MovieDetail: FC = () => {
                     ))}
                   </div>
                 </ScrollArea>
-              </div>
-            )}
+              ) : (
+                <div className="text-muted-foreground text-sm p-4 border rounded-md bg-muted/20">
+                  <p>Cast information is not available for this movie. This data is only available for movies imported directly from TMDb.</p>
+                  <p className="mt-2">Try searching for this movie in the Admin section to import enhanced details.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-3">Gallery</h2>
+              {movie.backdropUrl ? (
+                <div className="rounded-md overflow-hidden">
+                  <img 
+                    src={movie.backdropUrl} 
+                    alt={`${movie.title} backdrop`} 
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm p-4 border rounded-md bg-muted/20">
+                  <p>Additional images are not available for this movie. This data is only available for movies imported directly from TMDb.</p>
+                  <p className="mt-2">Try searching for this movie in the Admin section to import enhanced details.</p>
+                </div>
+              )}
+            </div>
             
             <Separator className="my-4" />
             
