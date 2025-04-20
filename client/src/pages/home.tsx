@@ -7,7 +7,7 @@ import WatchHistory from "@/components/watch-history";
 import MovieCard from "@/components/movie-card";
 import ConfirmationModal from "@/components/confirmation-modal";
 import FilterSummary from "@/components/filter-summary";
-import { Movie, WatchedMovie, Category, FilterState } from "@/lib/types";
+import { Movie, WatchedMovie, Genre, FilterState } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -36,8 +36,8 @@ const Home: FC = () => {
     setShowHistory(!isMobile);
   }, [isMobile]);
 
-  // Fetch categories
-  const { data: categories = [] } = useQuery<Category[]>({
+  // Fetch genres (still called "categories" in API)
+  const { data: categories = [] } = useQuery<Genre[]>({
     queryKey: ['/api/categories'],
   });
 

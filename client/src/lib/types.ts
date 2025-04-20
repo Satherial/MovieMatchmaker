@@ -5,7 +5,7 @@ export interface Movie {
   year: number;
   rating: number;
   imageUrl: string;
-  categories: string[];
+  categories: string[]; // Keep this as 'categories' for now for backend compatibility
 }
 
 export interface WatchedMovie {
@@ -15,13 +15,17 @@ export interface WatchedMovie {
   movie?: Movie;
 }
 
-export interface Category {
+// Rename from Category to Genre
+export interface Genre {
   id: string;
   name: string;
 }
 
+// For backwards compatibility
+export type Category = Genre;
+
 export interface FilterState {
-  categories: string[];
+  categories: string[]; // Keep this as 'categories' for now for backend compatibility
   minRating: number;
   yearFrom: string;
   yearTo: string;
