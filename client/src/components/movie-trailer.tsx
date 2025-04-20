@@ -25,7 +25,7 @@ const MovieTrailer: FC<MovieTrailerProps> = ({ movieTitle, movieYear }) => {
           ? `${movieTitle} ${movieYear} official trailer`
           : `${movieTitle} official trailer`;
         
-        const response = await fetch(`/api/movies/trailer?query=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`/api/trailer?query=${encodeURIComponent(searchQuery)}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch trailer');
