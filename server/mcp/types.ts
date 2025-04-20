@@ -39,14 +39,7 @@ export interface MCPAddToWatchHistoryRequest {
   notes?: string;
 }
 
-export interface MCPTMDbSearchRequest {
-  query: string;
-  page?: number;
-}
-
-export interface MCPTMDbImportRequest {
-  tmdbId: number;
-}
+// TMDb-related types have been removed
 
 // MCP API Authentication Types
 export interface MCPLoginRequest {
