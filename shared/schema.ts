@@ -39,6 +39,7 @@ export type Movie = typeof movies.$inferSelect;
 export const moviesRelations = relations(movies, ({ many }) => ({
   movieGenres: many(movieCategories),
   watchHistory: many(watchHistory),
+  playlistItems: many(playlistItems),
 }));
 
 // Genres table (renamed from categories)
@@ -140,4 +141,71 @@ export type User = typeof users.$inferSelect;
 
 export const usersRelations = relations(users, ({ many }) => ({
   watchHistory: many(watchHistory),
+  playlists: many(playlists),
+}));
+
+// Playlists table
+export const playlists = pgTable("playlists", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  isPublic: boolean("is_public").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPlaylistSchema = createInsertSchema(playlists).pick({
+  userId: true,
+  name: true,
+  description: true,
+  isPublic: true,
+});
+
+export type InsertPlaylist = z.infer<typeof insertPlaylistSchema>;
+export type Playlist = typeof playlists.$inferSelect;
+
+export const playlistsRelations = relations(playlists, ({ one, many }) => ({
+  user: one(users, {
+    fields: [playlists.userId],
+    references: [users.id],
+  }),
+  playlistItems: many(playlistItems),
+}));
+
+// Playlist Items table (junction table between playlists and movies)
+export const playlistItems = pgTable("playlist_items", {
+  id: serial("id").primaryKey(),
+  playlistId: integer("playlist_id").notNull().references(() => playlists.id, { onDelete: 'cascade' }),
+  movieId: integer("movie_id").notNull().references(() => movies.id),
+  addedAt: timestamp("added_at").notNull().defaultNow(),
+  notes: text("notes"),
+  sortOrder: integer("sort_order").notNull(),
+}, (table) => {
+  return {
+    playlistMovieUnique: primaryKey({
+      columns: [table.playlistId, table.movieId]
+    })
+  }
+});
+
+export const insertPlaylistItemSchema = createInsertSchema(playlistItems).pick({
+  playlistId: true,
+  movieId: true,
+  notes: true,
+  sortOrder: true,
+});
+
+export type InsertPlaylistItem = z.infer<typeof insertPlaylistItemSchema>;
+export type PlaylistItem = typeof playlistItems.$inferSelect;
+
+export const playlistItemsRelations = relations(playlistItems, ({ one }) => ({
+  playlist: one(playlists, {
+    fields: [playlistItems.playlistId],
+    references: [playlists.id],
+  }),
+  movie: one(movies, {
+    fields: [playlistItems.movieId],
+    references: [movies.id],
+  }),
 }));
