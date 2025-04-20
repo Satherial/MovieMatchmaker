@@ -4,6 +4,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertWatchHistorySchema } from "@shared/schema";
 import { setupAuth } from "./auth";
+import * as tmdbClient from "./tmdb-client";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -356,6 +357,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // TMDb API integration endpoints
+
+  // Search movies from TMDb
+  apiRouter.get("/tmdb/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      
+      if (!query) {
+        return res.status(400).json({ error: "Search query is required" });
+      }
+      
+      const results = await tmdbClient.searchMovies(query, page);
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching movies:", error);
+      res.status(500).json({ error: "Failed to search movies" });
+    }
+  });
+  
+  // Get movie details from TMDb
+  apiRouter.get("/tmdb/movies/:id", async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid movie ID" });
+      }
+      
+      const movie = await tmdbClient.getMovieDetails(id);
+      res.json(movie);
+    } catch (error) {
+      console.error(`Error fetching TMDb movie ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch movie details" });
+    }
+  });
+  
+  // Get popular movies from TMDb
+  apiRouter.get("/tmdb/popular", async (req, res) => {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const results = await tmdbClient.getPopularMovies(page);
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching popular movies:", error);
+      res.status(500).json({ error: "Failed to fetch popular movies" });
+    }
+  });
+  
+  // Get movies by genre from TMDb
+  apiRouter.get("/tmdb/genres/:id/movies", async (req, res) => {
+    try {
+      const genreId = Number(req.params.id);
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      
+      if (isNaN(genreId)) {
+        return res.status(400).json({ error: "Invalid genre ID" });
+      }
+      
+      const results = await tmdbClient.getMoviesByGenre(genreId, page);
+      res.json(results);
+    } catch (error) {
+      console.error(`Error fetching movies for genre ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch movies by genre" });
+    }
+  });
+  
+  // Get all genres from TMDb
+  apiRouter.get("/tmdb/genres", async (req, res) => {
+    try {
+      const genres = await tmdbClient.getGenres();
+      res.json(genres);
+    } catch (error) {
+      console.error("Error fetching TMDb genres:", error);
+      res.status(500).json({ error: "Failed to fetch genres" });
+    }
+  });
+  
+  // Import a movie from TMDb to the local database
+  apiRouter.post("/tmdb/import", async (req, res) => {
+    try {
+      const { movieId } = req.body;
+      
+      if (!movieId) {
+        return res.status(400).json({ error: "Movie ID is required" });
+      }
+      
+      // Check if movie already exists in our database
+      let movie = await storage.getMovie(Number(movieId));
+      
+      if (movie) {
+        return res.status(409).json({ 
+          message: "Movie already exists in database", 
+          movie 
+        });
+      }
+      
+      // Fetch movie details from TMDb
+      const tmdbMovie = await tmdbClient.getMovieDetails(Number(movieId));
+      
+      // Create the movie in our database
+      movie = await storage.createMovie({
+        id: tmdbMovie.id,
+        title: tmdbMovie.title,
+        description: tmdbMovie.description,
+        year: tmdbMovie.year,
+        imageUrl: tmdbMovie.imageUrl,
+        rating: tmdbMovie.rating,
+        director: tmdbMovie.director || null,
+        actors: tmdbMovie.actors || null,
+        duration: tmdbMovie.duration || null,
+        country: tmdbMovie.country || null,
+        language: tmdbMovie.language || null,
+        releaseDate: tmdbMovie.releaseDate || null
+      });
+      
+      // If the movie has categories, add them
+      if (tmdbMovie.categories && tmdbMovie.categories.length > 0) {
+        for (const categoryName of tmdbMovie.categories) {
+          // Check if category exists in our database
+          let category = await storage.getCategoryByName(categoryName);
+          
+          // If not, create it
+          if (!category) {
+            category = await storage.createCategory({
+              name: categoryName
+            });
+          }
+          
+          // Associate category with movie
+          await storage.addCategoryToMovie({
+            movieId: movie.id,
+            categoryId: category.id
+          });
+        }
+      }
+      
+      // Get movie with categories
+      const movieCategories = await storage.getMovieCategories(movie.id);
+      const categories = await Promise.all(
+        movieCategories.map(async (mc) => {
+          const cat = await storage.getCategory(mc.categoryId);
+          return cat ? cat.name : null;
+        })
+      );
+      
+      res.status(201).json({
+        ...movie,
+        categories: categories.filter(Boolean)
+      });
+    } catch (error) {
+      console.error("Error importing movie:", error);
+      res.status(500).json({ error: "Failed to import movie" });
+    }
+  });
+
   // Mount the API router under /api
   app.use("/api", apiRouter);
   
