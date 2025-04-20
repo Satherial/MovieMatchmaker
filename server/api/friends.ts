@@ -126,10 +126,16 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error creating friendship:", error);
     
-    // Pass through specific error messages from the database layer
+    // Convert technical error messages to user-friendly ones
     if (error instanceof Error) {
+      let friendlyMessage = "Failed to send friend request";
+      
+      if (error.message.includes("already exists")) {
+        friendlyMessage = "You've already sent a friend request to this user";
+      }
+      
       return res.status(400).json({ 
-        error: error.message 
+        error: friendlyMessage
       });
     }
     
@@ -152,7 +158,9 @@ friendsRouter.post("/accept/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error accepting friendship:", error);
     if (error instanceof Error) {
-      return res.status(400).json({ error: error.message });
+      // Convert technical error message to user-friendly one
+      let friendlyMessage = "Failed to accept friend request";
+      return res.status(400).json({ error: friendlyMessage });
     }
     return res.status(500).json({ error: "Failed to accept friend request" });
   }
