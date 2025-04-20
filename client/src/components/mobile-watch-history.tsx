@@ -1,10 +1,11 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 import { format } from 'date-fns';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { WatchedMovie } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import placeholderImage from "@/assets/movie-placeholder.svg";
 
 interface MobileWatchHistoryProps {
   watchHistory: WatchedMovie[];
@@ -18,6 +19,7 @@ const MobileWatchHistory: FC<MobileWatchHistoryProps> = ({
   className = "" 
 }) => {
   const { toast } = useToast();
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
   const { mutate: clearHistory } = useMutation({
     mutationFn: async () => {

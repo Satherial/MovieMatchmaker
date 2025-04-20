@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { WatchedMovie } from "@/lib/types";
 import {
   Card,
@@ -12,6 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import placeholderImage from "@/assets/movie-placeholder.svg";
 
 interface WatchHistoryProps {
   watchHistory: WatchedMovie[];
@@ -25,6 +26,7 @@ const WatchHistory: FC<WatchHistoryProps> = ({
   className = "" 
 }) => {
   const { toast } = useToast();
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
   const { mutate: clearHistory } = useMutation({
     mutationFn: async () => {
@@ -77,9 +79,10 @@ const WatchHistory: FC<WatchHistoryProps> = ({
           watchHistory.map((item) => (
             <div key={item.id} className="flex items-center space-x-3 pb-3 border-b border-gray-100">
               <img 
-                src={item.movie?.imageUrl} 
+                src={imageErrors[item.id] || !item.movie?.imageUrl ? placeholderImage : item.movie.imageUrl} 
                 alt={item.movie?.title || "Movie"} 
                 className="w-12 h-16 object-cover rounded-md"
+                onError={() => setImageErrors(prev => ({ ...prev, [item.id]: true }))}
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
