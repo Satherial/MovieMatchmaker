@@ -9,6 +9,8 @@ import MovieDetail from "@/pages/movie-detail";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
 import AdminPage from "@/pages/admin-page";
+import PlaylistsPage from "@/pages/playlists-page";
+import PlaylistDetailPage from "@/pages/playlist-detail";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -19,6 +21,8 @@ function Router() {
       <ProtectedRoute path="/movie/:id" component={MovieDetail} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/admin" component={AdminPage} />
+      <ProtectedRoute path="/playlists" component={PlaylistsPage} />
+      <ProtectedRoute path="/playlists/:id" component={PlaylistDetailPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

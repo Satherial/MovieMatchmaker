@@ -8,12 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Movie, CastMember } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, UserRound } from "lucide-react";
+import { ArrowLeft, Clock, UserRound, PlusCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import placeholderImage from "@/assets/movie-placeholder.svg";
 import { MovieReactions } from "@/components/movie-reactions";
 import { SocialShare } from "@/components/social-share";
+import { AddToPlaylist } from "@/components/add-to-playlist";
 
 const MovieDetail: FC = () => {
   const [match, params] = useRoute("/movie/:id");
@@ -270,12 +271,19 @@ const MovieDetail: FC = () => {
             
             <Separator className="my-4" />
             
-            <Button 
-              className="w-full md:w-auto px-8 py-6 text-lg"
-              onClick={() => handleWatchClick(movie)}
-            >
-              <Clock className="mr-2 h-5 w-5" /> I'll Watch This
-            </Button>
+            <div className="flex flex-col md:flex-row gap-3">
+              <Button 
+                className="w-full md:w-auto px-8 py-6 text-lg"
+                onClick={() => handleWatchClick(movie)}
+              >
+                <Clock className="mr-2 h-5 w-5" /> I'll Watch This
+              </Button>
+              
+              <AddToPlaylist
+                movie={movie}
+                variant="outline"
+              />
+            </div>
           </div>
         </div>
       </div>
