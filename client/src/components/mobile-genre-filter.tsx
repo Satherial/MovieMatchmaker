@@ -1,7 +1,9 @@
-import React, { FC } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import { Genre, FilterState } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useGenreTransition } from '@/contexts/genre-transition-context';
 
 interface MobileGenreFilterProps {
   categories: Genre[];
@@ -21,8 +23,21 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
   className = "",
 }) => {
   const yearOptions = ["Any", "2023", "2022", "2021", "2020", "2019", "2015", "2010", "2000", "1990", "1980", "1970"];
+  const { setGenreTransition } = useGenreTransition();
+  const [activeGenreName, setActiveGenreName] = useState<string | null>(null);
+
+  // Update active genre name when filters change
+  useEffect(() => {
+    if (filters.categories.length === 1) {
+      const selectedGenre = genres.find(g => g.id === filters.categories[0]);
+      setActiveGenreName(selectedGenre?.name || null);
+    } else {
+      setActiveGenreName(null);
+    }
+  }, [filters.categories, genres]);
 
   const handleGenreToggle = (genreId: string) => {
+    const previousGenreName = activeGenreName;
     const currentCategories = [...filters.categories];
     const index = currentCategories.indexOf(genreId);
     
@@ -32,6 +47,16 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
     } else {
       newCategories = currentCategories.filter(id => id !== genreId);
     }
+
+    // Get the new genre name
+    let newGenreName: string | null = null;
+    if (newCategories.length === 1) {
+      const selectedGenre = genres.find(g => g.id === newCategories[0]);
+      newGenreName = selectedGenre?.name || null;
+    }
+    
+    // Trigger the genre transition animation
+    setGenreTransition(previousGenreName, newGenreName);
     
     onFilterChange('categories', newCategories);
   };
@@ -52,18 +77,27 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
           <h3 className="text-sm font-medium text-gray-700 mb-2">Genres</h3>
           <div className="flex flex-wrap gap-2">
             {genres.map((genre) => (
-              <button
+              <motion.button
                 key={genre.id}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                className={`genre-chip px-3 py-1 text-sm rounded-full transition-colors ${
                   filters.categories.includes(genre.id)
                     ? "bg-primary text-white"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                 }`}
                 onClick={() => handleGenreToggle(genre.id)}
                 style={{ zIndex: 10 }}
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)" 
+                }}
+                whileTap={{ scale: 0.95 }}
+                animate={{ 
+                  scale: filters.categories.includes(genre.id) ? [1, 1.1, 1] : 1,
+                  transition: { duration: 0.3 }
+                }}
               >
                 {genre.name}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -120,20 +154,37 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
           </div>
         </div>
 
-        <Button
-          className="w-full"
-          onClick={onApplyFilters}
-          disabled={isLoading}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Loading...
-            </>
-          ) : (
-            "Apply Filters"
-          )}
-        </Button>
+          <Button
+            className="w-full"
+            onClick={onApplyFilters}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <motion.span
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  Apply Filters
+                </motion.span>
+                <motion.span
+                  className="absolute inset-0 rounded bg-primary opacity-0"
+                  whileHover={{ opacity: 0.1 }}
+                />
+              </>
+            )}
+          </Button>
+        </motion.div>
       </div>
     </div>
   );

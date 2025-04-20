@@ -166,20 +166,37 @@ const GenreFilter: FC<GenreFilterProps> = ({
           </div>
         </div>
 
-        <Button
-          className="w-full"
-          onClick={onApplyFilters}
-          disabled={isLoading}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Loading...
-            </>
-          ) : (
-            "Apply Filters"
-          )}
-        </Button>
+          <Button
+            className="w-full relative overflow-hidden"
+            onClick={onApplyFilters}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <motion.span
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  Apply Filters
+                </motion.span>
+                <motion.span
+                  className="absolute inset-0 rounded bg-primary opacity-0"
+                  whileHover={{ opacity: 0.1 }}
+                />
+              </>
+            )}
+          </Button>
+        </motion.div>
       </CardContent>
     </Card>
   );
