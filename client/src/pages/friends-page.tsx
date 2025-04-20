@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { CheckIcon, UserPlusIcon, XIcon, UserX2Icon, Users2Icon } from "lucide-react";
+import { CheckIcon, UserPlusIcon, XIcon, UserX2Icon, Users2Icon, ChevronLeftIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { extractErrorMessage } from "@/lib/error-handler";
 
@@ -302,7 +303,14 @@ export default function FriendsPage() {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Friends</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Friends</h1>
+        <Link href="/">
+          <Button variant="outline">
+            <ChevronLeftIcon className="h-4 w-4 mr-2" /> Back to Home
+          </Button>
+        </Link>
+      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 mb-6">
