@@ -33,7 +33,7 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
         transition: { duration: 0.2, ease: "easeOut" }
       }}
     >
-      <Card className="movie-card rounded-lg overflow-hidden shadow-sm border border-gray-200">
+      <Card className="movie-card rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col h-full">
         <motion.div 
           className="relative cursor-pointer" 
           onClick={handleViewDetails}
@@ -67,7 +67,7 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
             </div>
           </motion.div>
         </motion.div>
-        <div className="p-4">
+        <div className="p-4 flex flex-col flex-grow">
           <div className="flex justify-between items-start mb-2">
             <motion.h3 
               className="font-semibold text-gray-900 cursor-pointer hover:underline" 
@@ -77,7 +77,7 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
               {movie.title}
             </motion.h3>
             <motion.span 
-              className="text-xs bg-gray-100 rounded-md px-2 py-1"
+              className="text-xs bg-gray-100 rounded-md px-2 py-1 ml-2 flex-shrink-0"
               whileHover={{ backgroundColor: "#f0f0f0" }}
             >
               {movie.year}
@@ -98,13 +98,13 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
             ))}
           </div>
           <motion.p 
-            className="text-sm text-gray-600 mb-4 line-clamp-2"
+            className="text-sm text-gray-600 mb-4 line-clamp-2 flex-grow"
             initial={{ opacity: 0.9 }}
             whileHover={{ opacity: 1 }}
           >
             {movie.description}
           </motion.p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 mt-auto">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button 
                 variant="outline"
