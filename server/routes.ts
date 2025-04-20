@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertWatchHistorySchema } from "@shared/schema";
 import { setupAuth } from "./auth";
 import * as tmdbClient from "./tmdb-client";
+import { setupMCPRoutes } from "./mcp/routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -515,6 +516,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mount the API router under /api
   app.use("/api", apiRouter);
+  
+  // Set up MCP routes for LLM interaction
+  setupMCPRoutes(apiRouter);
   
   // Create and return the HTTP server
   const httpServer = createServer(app);
