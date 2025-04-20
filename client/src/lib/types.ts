@@ -23,7 +23,7 @@ export interface Movie {
   backdropUrl?: string;
 }
 
-// MovieWithCategories is used specifically for TMDb integration
+// MovieWithCategories extends the base Movie type without the id field
 export interface MovieWithCategories extends Omit<Movie, 'id'> {
   id: number;
   categories: string[];
