@@ -1,10 +1,12 @@
 import { FC } from 'react';
 import { Helmet } from 'react-helmet';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { TMDbSearch } from '@/components/tmdb-search';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Home } from 'lucide-react';
 
 const AdminPage: FC = () => {
   const { user, isLoading } = useAuth();
@@ -31,7 +33,23 @@ const AdminPage: FC = () => {
       </Helmet>
 
       <div className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div className="flex space-x-3 mt-4 md:mt-0">
+            <Button variant="outline" asChild className="flex items-center gap-2">
+              <Link href="/">
+                <Home className="h-4 w-4" />
+                Home
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="flex items-center gap-2">
+              <Link href="/movies">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Movies
+              </Link>
+            </Button>
+          </div>
+        </div>
 
         <Tabs defaultValue="tmdb" className="w-full">
           <TabsList className="mb-4">
