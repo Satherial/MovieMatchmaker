@@ -58,7 +58,7 @@ const CategoryFilter: FC<CategoryFilterProps> = ({
                 key={category.id}
                 className={`category-chip px-3 py-1 text-sm rounded-full transition-colors ${
                   filters.categories.includes(category.id)
-                    ? "bg-primary-600 text-white"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                 }`}
                 onClick={() => handleCategoryToggle(category.id)}

@@ -46,17 +46,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // First try to parse as JSON
             const parsed = JSON.parse(query.categories);
             if (Array.isArray(parsed)) {
-              categoryIds = parsed.map(Number);
+              categoryIds = parsed.map(id => parseInt(id)).filter(id => !isNaN(id));
             } else if (parsed) {
-              categoryIds = [Number(parsed)];
+              const parsedNum = parseInt(parsed);
+              if (!isNaN(parsedNum)) {
+                categoryIds = [parsedNum];
+              }
             }
           } catch (e) {
             // If it fails to parse as JSON, try as a comma-separated list
-            categoryIds = query.categories.split(',').map(id => Number(id)).filter(id => !isNaN(id));
+            categoryIds = query.categories.split(',')
+              .map(id => parseInt(id))
+              .filter(id => !isNaN(id));
           }
         } else if (Array.isArray(query.categories)) {
           // Handle case where Express might parse it as an array already
-          categoryIds = query.categories.map(Number);
+          categoryIds = query.categories
+            .map(id => parseInt(id.toString()))
+            .filter(id => !isNaN(id));
         }
       }
       
