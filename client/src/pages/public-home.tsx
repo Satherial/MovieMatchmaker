@@ -294,10 +294,8 @@ const PublicHome: FC = () => {
               <p className="text-muted-foreground mb-4">
                 Sign up for a free account to start tracking your movie preferences and connecting with friends.
               </p>
-              <Link href="/auth">
-                <a className="inline-flex items-center text-primary hover:underline">
-                  Sign up now <ArrowRight className="ml-1 h-4 w-4" />
-                </a>
+              <Link href="/auth" className="inline-flex items-center text-primary hover:underline">
+                Sign up now <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
 
@@ -309,10 +307,8 @@ const PublicHome: FC = () => {
               <p className="text-muted-foreground mb-4">
                 Start marking movies as watched to build your history and help the recommendation algorithm learn your tastes.
               </p>
-              <Link href="/auth">
-                <a className="inline-flex items-center text-primary hover:underline">
-                  Learn more <ArrowRight className="ml-1 h-4 w-4" />
-                </a>
+              <Link href="/auth" className="inline-flex items-center text-primary hover:underline">
+                Learn more <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
 
@@ -324,10 +320,8 @@ const PublicHome: FC = () => {
               <p className="text-muted-foreground mb-4">
                 Invite friends, share your favorite movies, and discover what movies you both want to watch together.
               </p>
-              <Link href="/auth">
-                <a className="inline-flex items-center text-primary hover:underline">
-                  Get started <ArrowRight className="ml-1 h-4 w-4" />
-                </a>
+              <Link href="/auth" className="inline-flex items-center text-primary hover:underline">
+                Get started <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </div>
           </div>

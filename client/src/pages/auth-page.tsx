@@ -51,6 +51,7 @@ const AuthPage: FC = () => {
     defaultValues: {
       username: "",
       email: "",
+      fullName: "",
       password: "",
       confirmPassword: "",
     },
@@ -245,6 +246,20 @@ const AuthPage: FC = () => {
                               <FormLabel>Email</FormLabel>
                               <FormControl>
                                 <Input type="email" placeholder="Enter your email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={registerForm.control}
+                          name="fullName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Full Name (optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your full name" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
