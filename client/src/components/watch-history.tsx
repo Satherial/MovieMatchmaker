@@ -48,7 +48,7 @@ const WatchHistory: FC<WatchHistoryProps> = ({
   });
 
   return (
-    <Card className={`${className}`}>
+    <Card className={`${className} !bg-white`}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold text-gray-800">Watch History</CardTitle>

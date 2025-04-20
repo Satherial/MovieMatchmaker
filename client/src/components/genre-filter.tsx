@@ -47,7 +47,7 @@ const GenreFilter: FC<GenreFilterProps> = ({
   };
 
   return (
-    <Card className={`${className}`}>
+    <Card className={`${className} !bg-white`}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold text-gray-800">Find Your Movie</CardTitle>
       </CardHeader>
