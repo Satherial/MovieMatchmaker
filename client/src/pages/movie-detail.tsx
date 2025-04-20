@@ -16,6 +16,7 @@ import { MovieReactions } from "@/components/movie-reactions";
 import { SocialShare } from "@/components/social-share";
 import { AddToPlaylist } from "@/components/add-to-playlist";
 import SharedWatchModal from "@/components/shared-watch-modal";
+import MovieTrailer from "@/components/movie-trailer";
 import { useAuth } from "@/hooks/use-auth";
 
 const MovieDetail: FC = () => {
@@ -174,6 +175,9 @@ const MovieDetail: FC = () => {
               <p className="text-gray-700 leading-relaxed">{movie.description}</p>
             </div>
 
+            {/* Movie Trailer Section */}
+            <MovieTrailer movieTitle={movie.title} movieYear={movie.year} />
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
               {movie.director && (
                 <div>
