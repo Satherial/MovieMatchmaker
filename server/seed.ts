@@ -1,7 +1,18 @@
 import { db } from './db';
 import {
-  movies, categories, movieCategories, watchHistory
+  movies, categories, movieCategories, watchHistory, users
 } from '@shared/schema';
+import { scrypt, randomBytes } from 'crypto';
+import { promisify } from 'util';
+
+const scryptAsync = promisify(scrypt);
+
+// Function to hash passwords securely
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 async function seed() {
   console.log('Seeding database with initial data...');
@@ -12,6 +23,7 @@ async function seed() {
     await db.delete(movieCategories);
     await db.delete(movies);
     await db.delete(categories);
+    await db.delete(users);
     
     // Add categories
     console.log('Adding categories...');
@@ -179,17 +191,68 @@ async function seed() {
     
     console.log('Added movie-category connections');
     
-    // Add sample watched movies
-    const watchedMovies = [
-      { title: "Barbie", year: 2023, imageUrl: "https://image.tmdb.org/t/p/w200/1E5baAaEse26fej7uHcjOgEE2t2.jpg" },
-      { title: "The Super Mario Bros. Movie", year: 2023, imageUrl: "https://image.tmdb.org/t/p/w200/rktDFPbfHfUbArZ6OOOKsXcv0Bm.jpg" },
-      { title: "Mission: Impossible", year: 2023, imageUrl: "https://image.tmdb.org/t/p/w200/NNxYkU70HPurnNCSiCjYAmacwm.jpg" }
-    ];
+    // Create default users
+    console.log('Creating users...');
     
-    // Instead of trying to add these, we'll mark some existing movies as watched
-    const samplesToMarkAsWatched = ["The Hangover", "Knocked Up"];
+    // Create an admin user
+    const adminPassword = await hashPassword('admin1234');
+    const [adminUser] = await db.insert(users).values({
+      username: 'admin',
+      password: adminPassword,
+      email: 'admin@example.com',
+      fullName: 'System Administrator',
+      avatarUrl: null,
+      createdAt: new Date(),
+      preferences: JSON.stringify({
+        favoriteGenres: ['Action', 'Sci-Fi'],
+        darkMode: true,
+        showRecommendations: true
+      })
+    }).returning();
     
-    for (const movieTitle of samplesToMarkAsWatched) {
+    // Create a regular user
+    const userPassword = await hashPassword('password123');
+    const [regularUser] = await db.insert(users).values({
+      username: 'moviefan',
+      password: userPassword,
+      email: 'user@example.com',
+      fullName: 'Movie Fan',
+      avatarUrl: null,
+      createdAt: new Date(),
+      preferences: JSON.stringify({
+        favoriteGenres: ['Comedy', 'Drama'],
+        darkMode: false,
+        showRecommendations: true
+      })
+    }).returning();
+    
+    console.log('Users created:', { adminId: adminUser.id, regularUserId: regularUser.id });
+    
+    // Add watch history for users
+    const samplesToMarkAsWatchedByAdmin = ["The Dark Knight", "Inception"];
+    const samplesToMarkAsWatchedByUser = ["The Hangover", "Knocked Up", "Bridesmaids"];
+    
+    // Add admin's watch history
+    for (const movieTitle of samplesToMarkAsWatchedByAdmin) {
+      const movieId = movieIds[movieTitle];
+      if (movieId) {
+        // Create a watch entry from 1-5 days ago
+        const daysAgo = Math.floor(Math.random() * 5) + 1;
+        const date = new Date();
+        date.setDate(date.getDate() - daysAgo);
+        
+        await db.insert(watchHistory).values({
+          movieId,
+          userId: adminUser.id,
+          watchedAt: date,
+          rating: Math.floor(Math.random() * 3) + 3, // 3-5 star rating
+          notes: `Watched on ${date.toLocaleDateString()}`
+        });
+      }
+    }
+    
+    // Add regular user's watch history
+    for (const movieTitle of samplesToMarkAsWatchedByUser) {
       const movieId = movieIds[movieTitle];
       if (movieId) {
         // Create a watch entry from 1-3 days ago
@@ -199,7 +262,10 @@ async function seed() {
         
         await db.insert(watchHistory).values({
           movieId,
-          watchedAt: date
+          userId: regularUser.id,
+          watchedAt: date,
+          rating: Math.floor(Math.random() * 3) + 3, // 3-5 star rating
+          notes: null
         });
       }
     }

@@ -1,12 +1,24 @@
-import express, { type Express } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertWatchHistorySchema } from "@shared/schema";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+  
   // Create the API router
   const apiRouter = express.Router();
+  
+  // Middleware to check if user is authenticated
+  const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.status(401).json({ error: "Unauthorized - Please log in" });
+  };
   
   // Get all categories
   apiRouter.get("/categories", async (req, res) => {
