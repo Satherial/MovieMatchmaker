@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import PublicHome from "@/pages/public-home";
 import MovieDetail from "@/pages/movie-detail";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
@@ -19,6 +20,8 @@ import { ProtectedRoute } from "@/lib/protected-route";
 function Router() {
   return (
     <Switch>
+      <Route path="/home" component={PublicHome} />
+      <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/" component={Home} />
       <ProtectedRoute path="/movies/:id" component={MovieDetail} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
@@ -27,7 +30,6 @@ function Router() {
       <ProtectedRoute path="/friends" component={FriendsPage} />
       <ProtectedRoute path="/shared-playlists" component={SharedPlaylistsPage} />
       <ProtectedRoute path="/shared-watches" component={SharedWatchesPage} />
-      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
