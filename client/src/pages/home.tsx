@@ -129,22 +129,24 @@ const Home: FC = () => {
           <div className="flex flex-col md:flex-row">
             {/* Sidebar */}
             <div className="md:w-1/4 md:pr-8 mb-6 md:mb-0">
-              {/* Desktop version */}
+              {/* Desktop version - sticky sidebar container */}
               <div className="hidden md:block">
-                <GenreFilter
-                  categories={categories}
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  onApplyFilters={handleApplyFilters}
-                  isLoading={isMoviesLoading}
-                  className="sticky top-4 mb-6"
-                />
+                <div className="sticky top-4 space-y-6">
+                  <GenreFilter
+                    categories={categories}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    onApplyFilters={handleApplyFilters}
+                    isLoading={isMoviesLoading}
+                    className="mb-6"
+                  />
 
-                <WatchHistory
-                  watchHistory={watchHistory}
-                  isLoading={isHistoryLoading}
-                  className="md:block"
-                />
+                  <WatchHistory
+                    watchHistory={watchHistory}
+                    isLoading={isHistoryLoading}
+                    className="block"
+                  />
+                </div>
               </div>
               
               {/* Mobile version with completely custom components */}
