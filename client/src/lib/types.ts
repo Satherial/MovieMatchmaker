@@ -14,6 +14,12 @@ export interface Movie {
   releaseDate?: string;
 }
 
+// MovieWithCategories is used specifically for TMDb integration
+export interface MovieWithCategories extends Omit<Movie, 'id'> {
+  id: number;
+  categories: string[];
+}
+
 export interface WatchedMovie {
   id: number;
   movieId: number;

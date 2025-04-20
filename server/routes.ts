@@ -459,7 +459,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create the movie in our database
       movie = await storage.createMovie({
-        id: tmdbMovie.id,
         title: tmdbMovie.title,
         description: tmdbMovie.description,
         year: tmdbMovie.year,
@@ -474,8 +473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // If the movie has categories, add them
-      if (tmdbMovie.categories && tmdbMovie.categories.length > 0) {
-        for (const categoryName of tmdbMovie.categories) {
+      const tmdbCategories = tmdbMovie.categories || [];
+      if (tmdbCategories.length > 0) {
+        for (const categoryName of tmdbCategories) {
           // Check if category exists in our database
           let category = await storage.getCategoryByName(categoryName);
           
@@ -496,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get movie with categories
       const movieCategories = await storage.getMovieCategories(movie.id);
-      const categories = await Promise.all(
+      const categoryNames = await Promise.all(
         movieCategories.map(async (mc) => {
           const cat = await storage.getCategory(mc.categoryId);
           return cat ? cat.name : null;
@@ -505,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json({
         ...movie,
-        categories: categories.filter(Boolean)
+        categories: categoryNames.filter(Boolean)
       });
     } catch (error) {
       console.error("Error importing movie:", error);

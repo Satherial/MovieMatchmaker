@@ -1,6 +1,12 @@
 import axios from 'axios';
 import { Movie as AppMovie, Genre as DbGenre, InsertMovie } from '@shared/schema';
 
+// Define our own custom Genre type for TMDB responses
+export interface Genre {
+  id: string;
+  name: string;
+}
+
 // Define a modified movie type that includes categories array for TMDb integration
 interface MovieWithCategories extends Omit<InsertMovie, 'id'> {
   id: number;
@@ -112,7 +118,7 @@ function mapTMDbMovieToAppMovie(tmdbMovie: TMDbMovie, genresList: { id: number; 
 }
 
 export async function searchMovies(query: string, page: number = 1): Promise<{
-  movies: AppMovie[];
+  movies: MovieWithCategories[];
   totalPages: number;
   totalResults: number;
   page: number;
@@ -143,7 +149,7 @@ export async function searchMovies(query: string, page: number = 1): Promise<{
   }
 }
 
-export async function getMovieDetails(movieId: number): Promise<AppMovie> {
+export async function getMovieDetails(movieId: number): Promise<MovieWithCategories> {
   try {
     const response = await axios.get<TMDbMovie>(
       `${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&append_to_response=credits&language=en-US`
@@ -157,7 +163,7 @@ export async function getMovieDetails(movieId: number): Promise<AppMovie> {
 }
 
 export async function getPopularMovies(page: number = 1): Promise<{
-  movies: AppMovie[];
+  movies: MovieWithCategories[];
   totalPages: number;
   page: number;
 }> {
@@ -187,7 +193,7 @@ export async function getPopularMovies(page: number = 1): Promise<{
 }
 
 export async function getMoviesByGenre(genreId: number, page: number = 1): Promise<{
-  movies: AppMovie[];
+  movies: MovieWithCategories[];
   totalPages: number;
   page: number;
 }> {
