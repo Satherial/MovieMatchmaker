@@ -88,7 +88,7 @@ export default function Header() {
             </Button>
             
             {isMenuOpen && (
-              <div className="fixed inset-0 top-16 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="fixed inset-0 top-16 z-50 bg-background shadow-lg">
                 <nav className="container flex flex-col py-8 gap-4">
                   <Link 
                     href="/" 
