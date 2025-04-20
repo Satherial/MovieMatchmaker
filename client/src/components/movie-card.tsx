@@ -27,13 +27,14 @@ const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
 
   return (
     <motion.div 
+      className="h-full flex"
       whileHover={{ 
         scale: 1.02, 
         y: -5,
         transition: { duration: 0.2, ease: "easeOut" }
       }}
     >
-      <Card className="movie-card rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col h-full">
+      <Card className="movie-card rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col h-full flex-1">
         <motion.div 
           className="relative cursor-pointer" 
           onClick={handleViewDetails}

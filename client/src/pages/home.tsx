@@ -245,6 +245,7 @@ const Home: FC = () => {
                               ease: "easeOut"
                             }
                           }}
+                          className="h-full" // Add height: 100% to each grid item
                         >
                           <MovieCard
                             movie={movie}
