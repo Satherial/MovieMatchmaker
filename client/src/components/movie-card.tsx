@@ -1,8 +1,9 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { Card } from "@/components/ui/card";
 import StarRating from "@/components/ui/stars";
 import { Movie } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import placeholderImage from "@/assets/movie-placeholder.svg";
 
 interface MovieCardProps {
   movie: Movie;
@@ -10,13 +11,20 @@ interface MovieCardProps {
 }
 
 const MovieCard: FC<MovieCardProps> = ({ movie, onWatchClick }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <Card className="movie-card rounded-lg overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all hover:-translate-y-1">
       <div className="relative">
         <img 
-          src={movie.imageUrl} 
+          src={imageError || !movie.imageUrl ? placeholderImage : movie.imageUrl} 
           alt={movie.title} 
           className="w-full h-48 object-cover"
+          onError={handleImageError}
         />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
           <div className="flex items-center">
