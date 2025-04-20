@@ -2,7 +2,11 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertWatchHistorySchema } from "@shared/schema";
+import { 
+  insertWatchHistorySchema, 
+  insertPlaylistSchema, 
+  insertPlaylistItemSchema 
+} from "@shared/schema";
 import { setupAuth } from "./auth";
 import * as tmdbClient from "./tmdb-client";
 import { setupMCPRoutes } from "./mcp/routes";
@@ -511,6 +515,285 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error importing movie:", error);
       res.status(500).json({ error: "Failed to import movie" });
+    }
+  });
+
+  // Playlist Routes - User-generated movie playlists
+  
+  // Get user playlists (authenticated user only)
+  apiRouter.get("/playlists", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const playlists = await storage.getUserPlaylists(userId);
+      res.json(playlists);
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
+      res.status(500).json({ error: "Failed to fetch playlists" });
+    }
+  });
+
+  // Get a single playlist with its movies
+  apiRouter.get("/playlists/:id", async (req, res) => {
+    try {
+      const playlistId = Number(req.params.id);
+      const playlist = await storage.getPlaylist(playlistId);
+      
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+      
+      // Check if the user has access to this playlist
+      if (!playlist.isPublic && req.isAuthenticated() && playlist.userId !== req.user.id) {
+        return res.status(403).json({ error: "You don't have permission to view this playlist" });
+      }
+      
+      // Get playlist movies
+      const movies = await storage.getPlaylistMovies(playlistId);
+      
+      // Get playlist items for additional metadata
+      const playlistItems = await storage.getPlaylistItems(playlistId);
+      
+      // Map movies with their playlist item data (notes, sort order)
+      const moviesWithPlaylistData = movies.map(movie => {
+        const playlistItem = playlistItems.find(item => item.movieId === movie.id);
+        return {
+          ...movie,
+          playlistItem: playlistItem || null
+        };
+      });
+      
+      // Get creator info
+      const creator = await storage.getUser(playlist.userId);
+      const creatorInfo = creator ? {
+        id: creator.id,
+        username: creator.username,
+        fullName: creator.fullName,
+        avatarUrl: creator.avatarUrl
+      } : null;
+      
+      res.json({
+        ...playlist,
+        movies: moviesWithPlaylistData,
+        creator: creatorInfo
+      });
+    } catch (error) {
+      console.error(`Error fetching playlist ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch playlist" });
+    }
+  });
+
+  // Create a new playlist
+  apiRouter.post("/playlists", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { name, description, isPublic } = req.body;
+      
+      // Create a playlist object
+      const playlistData = {
+        userId,
+        name,
+        description: description || null,
+        isPublic: isPublic === true
+      };
+      
+      // Validate the data
+      const validation = insertPlaylistSchema.safeParse(playlistData);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors });
+      }
+      
+      // Create the playlist
+      const playlist = await storage.createPlaylist(validation.data);
+      res.status(201).json(playlist);
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      res.status(500).json({ error: "Failed to create playlist" });
+    }
+  });
+
+  // Update a playlist
+  apiRouter.put("/playlists/:id", isAuthenticated, async (req, res) => {
+    try {
+      const playlistId = Number(req.params.id);
+      const userId = req.user.id;
+      
+      // Check if playlist exists and belongs to user
+      const playlist = await storage.getPlaylist(playlistId);
+      
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+      
+      if (playlist.userId !== userId) {
+        return res.status(403).json({ error: "You don't have permission to edit this playlist" });
+      }
+      
+      // Update the playlist
+      const { name, description, isPublic } = req.body;
+      const updateData: any = {};
+      
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (isPublic !== undefined) updateData.isPublic = isPublic;
+      
+      const updatedPlaylist = await storage.updatePlaylist(playlistId, updateData);
+      res.json(updatedPlaylist);
+    } catch (error) {
+      console.error(`Error updating playlist ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to update playlist" });
+    }
+  });
+
+  // Delete a playlist
+  apiRouter.delete("/playlists/:id", isAuthenticated, async (req, res) => {
+    try {
+      const playlistId = Number(req.params.id);
+      const userId = req.user.id;
+      
+      // Check if playlist exists and belongs to user
+      const playlist = await storage.getPlaylist(playlistId);
+      
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+      
+      if (playlist.userId !== userId) {
+        return res.status(403).json({ error: "You don't have permission to delete this playlist" });
+      }
+      
+      // Delete the playlist
+      await storage.deletePlaylist(playlistId);
+      res.status(200).json({ message: "Playlist deleted successfully" });
+    } catch (error) {
+      console.error(`Error deleting playlist ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to delete playlist" });
+    }
+  });
+
+  // Add a movie to a playlist
+  apiRouter.post("/playlists/:id/movies", isAuthenticated, async (req, res) => {
+    try {
+      const playlistId = Number(req.params.id);
+      const userId = req.user.id;
+      const { movieId, notes } = req.body;
+      
+      if (!movieId) {
+        return res.status(400).json({ error: "Movie ID is required" });
+      }
+      
+      // Check if playlist exists and belongs to user
+      const playlist = await storage.getPlaylist(playlistId);
+      
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+      
+      if (playlist.userId !== userId) {
+        return res.status(403).json({ error: "You don't have permission to add to this playlist" });
+      }
+      
+      // Check if movie exists
+      const movie = await storage.getMovie(Number(movieId));
+      if (!movie) {
+        return res.status(404).json({ error: "Movie not found" });
+      }
+      
+      // Add the movie to the playlist
+      const playlistItemData = {
+        playlistId,
+        movieId: Number(movieId),
+        notes: notes || null,
+        sortOrder: 0 // The storage function will determine the proper sort order
+      };
+      
+      // Validate the data
+      const validation = insertPlaylistItemSchema.safeParse(playlistItemData);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors });
+      }
+      
+      // Add the movie to playlist
+      try {
+        const playlistItem = await storage.addMovieToPlaylist(validation.data);
+        // Return the item with the movie details
+        res.status(201).json({
+          ...playlistItem,
+          movie
+        });
+      } catch (error: any) {
+        if (error.message === 'Movie already exists in this playlist') {
+          return res.status(409).json({ error: error.message });
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error(`Error adding movie to playlist ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to add movie to playlist" });
+    }
+  });
+
+  // Remove a movie from a playlist
+  apiRouter.delete("/playlists/:id/movies/:movieId", isAuthenticated, async (req, res) => {
+    try {
+      const playlistId = Number(req.params.id);
+      const movieId = Number(req.params.movieId);
+      const userId = req.user.id;
+      
+      // Check if playlist exists and belongs to user
+      const playlist = await storage.getPlaylist(playlistId);
+      
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+      
+      if (playlist.userId !== userId) {
+        return res.status(403).json({ error: "You don't have permission to modify this playlist" });
+      }
+      
+      // Remove the movie from the playlist
+      await storage.removeMovieFromPlaylist(playlistId, movieId);
+      res.status(200).json({ message: "Movie removed from playlist successfully" });
+    } catch (error: any) {
+      if (error.message === 'Movie not found in playlist') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      console.error(`Error removing movie from playlist:`, error);
+      res.status(500).json({ error: "Failed to remove movie from playlist" });
+    }
+  });
+
+  // Reorder movies in a playlist
+  apiRouter.put("/playlists/:id/reorder", isAuthenticated, async (req, res) => {
+    try {
+      const playlistId = Number(req.params.id);
+      const userId = req.user.id;
+      const { itemIds } = req.body;
+      
+      if (!Array.isArray(itemIds) || itemIds.length === 0) {
+        return res.status(400).json({ error: "Valid array of item IDs is required" });
+      }
+      
+      // Check if playlist exists and belongs to user
+      const playlist = await storage.getPlaylist(playlistId);
+      
+      if (!playlist) {
+        return res.status(404).json({ error: "Playlist not found" });
+      }
+      
+      if (playlist.userId !== userId) {
+        return res.status(403).json({ error: "You don't have permission to modify this playlist" });
+      }
+      
+      // Reorder the playlist items
+      await storage.reorderPlaylistItems(playlistId, itemIds);
+      
+      // Get the updated items
+      const updatedItems = await storage.getPlaylistItems(playlistId);
+      res.json(updatedItems);
+    } catch (error) {
+      console.error(`Error reordering playlist ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to reorder playlist" });
     }
   });
 
