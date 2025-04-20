@@ -8,7 +8,6 @@ import Home from "@/pages/home";
 import MovieDetail from "@/pages/movie-detail";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
-import AdminPage from "@/pages/admin-page";
 import PlaylistsPage from "@/pages/playlists-page";
 import PlaylistDetailPage from "@/pages/playlist-detail";
 import FriendsPage from "@/pages/friends-page";
@@ -23,7 +22,6 @@ function Router() {
       <ProtectedRoute path="/" component={Home} />
       <ProtectedRoute path="/movies/:id" component={MovieDetail} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
-      <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/playlists" component={PlaylistsPage} />
       <ProtectedRoute path="/playlists/:id" component={PlaylistDetailPage} />
       <ProtectedRoute path="/friends" component={FriendsPage} />
