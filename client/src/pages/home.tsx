@@ -7,6 +7,7 @@ import WatchHistory from "@/components/watch-history";
 import MovieCard from "@/components/movie-card";
 import ConfirmationModal from "@/components/confirmation-modal";
 import FilterSummary from "@/components/filter-summary";
+import MobileFilterWrapper from "@/components/mobile-filter-wrapper";
 import { Movie, WatchedMovie, Genre, FilterState } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -140,26 +141,25 @@ const Home: FC = () => {
                 />
               </div>
               
-              {/* Mobile version with solid background container */}
+              {/* Mobile version with special wrapper to fix background issues */}
               <div className="md:hidden">
-                <div className="bg-white shadow-md rounded-lg p-4 mb-6">
+                <MobileFilterWrapper className="mb-6 p-4">
                   <GenreFilter
                     categories={categories}
                     filters={filters}
                     onFilterChange={handleFilterChange}
                     onApplyFilters={handleApplyFilters}
                     isLoading={isMoviesLoading}
-                    className="mb-6"
                   />
-                </div>
+                </MobileFilterWrapper>
                 
                 {showHistory && (
-                  <div className="bg-white shadow-md rounded-lg p-4">
+                  <MobileFilterWrapper className="p-4">
                     <WatchHistory
                       watchHistory={watchHistory}
                       isLoading={isHistoryLoading}
                     />
-                  </div>
+                  </MobileFilterWrapper>
                 )}
               </div>
             </div>
