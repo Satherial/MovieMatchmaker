@@ -44,8 +44,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const query = req.query;
       
       // Get watch history to exclude watched movies
-      const watchHistory = await storage.getWatchHistory();
-      const watchedMovieIds = watchHistory.map(item => item.movieId);
+      // If user is authenticated, only exclude their watched movies
+      let watchedMovieIds: number[] = [];
+      if (req.isAuthenticated()) {
+        const userId = req.user.id;
+        const userWatchHistory = await storage.getWatchHistory(userId);
+        watchedMovieIds = userWatchHistory.map(item => item.movieId);
+      } else {
+        const watchHistory = await storage.getWatchHistory();
+        watchedMovieIds = watchHistory.map(item => item.movieId);
+      }
       
       // Parse filter parameters
       let categoryIds: number[] = [];
@@ -150,10 +158,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get watch history
+  // Get watch history (with option for user-specific data)
   apiRouter.get("/watch-history", async (req, res) => {
     try {
-      const watchHistory = await storage.getWatchHistory();
+      // Determine which watch history to fetch
+      let watchHistory;
+      if (req.isAuthenticated()) {
+        // If authenticated, get user-specific watch history
+        const userId = req.user.id;
+        watchHistory = await storage.getWatchHistory(userId);
+      } else {
+        // Otherwise get all watch history
+        watchHistory = await storage.getWatchHistory();
+      }
       
       // Enhance with movie details
       const enhancedHistory = await Promise.all(
@@ -193,17 +210,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add to watch history
   apiRouter.post("/watch-history", async (req, res) => {
     try {
-      // Validate the request body
-      const validation = insertWatchHistorySchema.safeParse(req.body);
+      // Get base data from request
+      const { movieId, rating, notes } = req.body;
       
-      if (!validation.success) {
-        return res.status(400).json({ error: validation.error.errors });
+      if (!movieId) {
+        return res.status(400).json({ error: "Movie ID is required" });
       }
       
       // Check if movie exists
-      const movie = await storage.getMovie(validation.data.movieId);
+      const movie = await storage.getMovie(Number(movieId));
       if (!movie) {
         return res.status(404).json({ error: "Movie not found" });
+      }
+      
+      // Create watch history entry
+      let watchHistoryData: any = {
+        movieId: Number(movieId),
+        watchedAt: new Date(),
+        rating: rating || null,
+        notes: notes || null
+      };
+      
+      // If authenticated, add userId
+      if (req.isAuthenticated()) {
+        watchHistoryData.userId = req.user.id;
+      }
+      
+      // Validate the request data
+      const validation = insertWatchHistorySchema.safeParse(watchHistoryData);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors });
       }
       
       // Add to watch history
@@ -222,14 +258,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Clear watch history
+  // Clear watch history (user-specific if authenticated)
   apiRouter.delete("/watch-history", async (req, res) => {
     try {
-      await storage.clearWatchHistory();
-      res.status(200).json({ message: "Watch history cleared successfully" });
+      if (req.isAuthenticated()) {
+        // Clear only the authenticated user's history
+        await storage.clearWatchHistory(req.user.id);
+        res.status(200).json({ message: "Your watch history cleared successfully" });
+      } else {
+        // Clear all watch history (should be restricted to admins in production)
+        await storage.clearWatchHistory();
+        res.status(200).json({ message: "All watch history cleared successfully" });
+      }
     } catch (error) {
       console.error("Error clearing watch history:", error);
       res.status(500).json({ error: "Failed to clear watch history" });
+    }
+  });
+  
+  // Get movie recommendations based on user's watch history
+  apiRouter.get("/recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const limit = req.query.limit ? Number(req.query.limit) : 5;
+      
+      // Get recommendations
+      const recommendedMovies = await storage.getRecommendedMovies(userId, limit);
+      
+      // Enhance with categories
+      const moviesWithCategories = await Promise.all(
+        recommendedMovies.map(async (movie) => {
+          const movieCategories = await storage.getMovieCategories(movie.id);
+          const categories = await Promise.all(
+            movieCategories.map(async (mc) => {
+              const cat = await storage.getCategory(mc.categoryId);
+              return cat ? cat.name : null;
+            })
+          );
+          
+          return {
+            ...movie,
+            categories: categories.filter(Boolean) as string[]
+          };
+        })
+      );
+      
+      res.json(moviesWithCategories);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+      res.status(500).json({ error: "Failed to fetch movie recommendations" });
+    }
+  });
+  
+  // Get user preferences
+  apiRouter.get("/preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const preferences = await storage.getUserPreferences(userId);
+      
+      if (!preferences) {
+        return res.status(404).json({ error: "No preferences found" });
+      }
+      
+      // Parse preferences if it's a JSON string
+      try {
+        const parsedPreferences = JSON.parse(preferences);
+        return res.json(parsedPreferences);
+      } catch (e) {
+        // If it's not valid JSON, return as is
+        return res.json({ preferences });
+      }
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      res.status(500).json({ error: "Failed to fetch preferences" });
+    }
+  });
+  
+  // Update user preferences
+  apiRouter.put("/preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { preferences } = req.body;
+      
+      // Convert to string if an object is provided
+      const preferencesString = typeof preferences === 'object' 
+        ? JSON.stringify(preferences) 
+        : preferences;
+      
+      const updatedUser = await storage.saveUserPreferences(userId, preferencesString);
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      res.status(500).json({ error: "Failed to update preferences" });
     }
   });
   
