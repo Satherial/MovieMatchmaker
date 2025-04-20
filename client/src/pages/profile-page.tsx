@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogOut, History, Film } from "lucide-react";
+import { Loader2, LogOut, History, Film, ArrowLeft, Home } from "lucide-react";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation } from "wouter";
@@ -176,9 +176,26 @@ export default function ProfilePage() {
     });
   };
   
+  // Handle navigation back to home page
+  const handleBackToHome = () => {
+    navigate("/");
+  };
+
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="flex flex-col space-y-6">
+        <div className="flex flex-wrap items-center gap-3 mb-2">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToHome} 
+            className="flex items-center gap-2"
+            size="sm"
+          >
+            <ArrowLeft size={16} />
+            Back to Home
+          </Button>
+        </div>
+        
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Your Profile</h1>
           <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
