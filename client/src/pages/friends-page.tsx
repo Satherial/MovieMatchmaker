@@ -104,9 +104,10 @@ function FriendCard({ friend, onAccept, onReject, onRemove }: {
   );
 }
 
-function SearchUserCard({ user, onAddFriend }: { 
+function SearchUserCard({ user, onAddFriend, isLoading }: { 
   user: User;
   onAddFriend: () => void;
+  isLoading?: boolean;
 }) {
   const initials = user.username.substring(0, 2).toUpperCase();
 
@@ -127,8 +128,20 @@ function SearchUserCard({ user, onAddFriend }: {
         </div>
       </CardHeader>
       <CardFooter className="pt-1 flex justify-end">
-        <Button size="sm" onClick={onAddFriend}>
-          <UserPlusIcon className="h-4 w-4 mr-1" /> Add Friend
+        <Button 
+          size="sm" 
+          onClick={onAddFriend} 
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <span className="h-4 w-4 mr-1 animate-spin">⏳</span> Adding...
+            </>
+          ) : (
+            <>
+              <UserPlusIcon className="h-4 w-4 mr-1" /> Add Friend
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>
@@ -199,9 +212,13 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          "Failed to send friend request.";
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to send friend request.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -223,9 +240,13 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          "Failed to accept friend request.";
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to accept friend request.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -247,9 +268,13 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          "Failed to reject friend request.";
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to reject friend request.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -271,9 +296,13 @@ export default function FriendsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/friends/sent-requests"] });
     },
     onError: (error: any) => {
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          "Failed to remove friend.";
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to remove friend.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -392,6 +421,7 @@ export default function FriendsPage() {
               <SearchUserCard
                 key={user.id}
                 user={user}
+                isLoading={sendRequestMutation.isPending && sendRequestMutation.variables === user.id}
                 onAddFriend={() => sendRequestMutation.mutate(user.id)}
               />
             ))
