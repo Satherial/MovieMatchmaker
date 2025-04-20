@@ -5,7 +5,10 @@ import {
   movieCategories, type MovieGenre, type InsertMovieGenre,
   watchHistory, type WatchHistory, type InsertWatchHistory,
   playlists, type Playlist, type InsertPlaylist,
-  playlistItems, type PlaylistItem, type InsertPlaylistItem
+  playlistItems, type PlaylistItem, type InsertPlaylistItem,
+  friendships, type Friendship, type InsertFriendship,
+  playlistShares, type PlaylistShare, type InsertPlaylistShare,
+  sharedWatches, type SharedWatch, type InsertSharedWatch
 } from "@shared/schema";
 
 // Define storage interface for all needed operations
@@ -15,6 +18,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User>;
+  searchUsers(query: string, excludeUserId?: number): Promise<User[]>;
   
   // Movie operations
   getMovies(filters?: {
@@ -57,6 +61,8 @@ export interface IStorage {
   createPlaylist(playlist: InsertPlaylist): Promise<Playlist>;
   updatePlaylist(id: number, playlist: Partial<Playlist>): Promise<Playlist>;
   deletePlaylist(id: number): Promise<void>;
+  getSharedPlaylists(userId: number): Promise<Playlist[]>;
+  getPublicPlaylists(): Promise<Playlist[]>;
   
   // Playlist Items operations
   getPlaylistItems(playlistId: number): Promise<PlaylistItem[]>; 
@@ -65,6 +71,23 @@ export interface IStorage {
   updatePlaylistItem(id: number, playlistItem: Partial<PlaylistItem>): Promise<PlaylistItem>;
   removeMovieFromPlaylist(playlistId: number, movieId: number): Promise<void>;
   reorderPlaylistItems(playlistId: number, itemIds: number[]): Promise<void>;
+  
+  // Friendship operations
+  getFriendships(userId: number, status?: string): Promise<Friendship[]>;
+  getFriendshipRequests(userId: number): Promise<Friendship[]>;
+  createFriendship(friendship: InsertFriendship): Promise<Friendship>;
+  updateFriendshipStatus(id: number, status: string): Promise<Friendship>;
+  deleteFriendship(userId: number, friendId: number): Promise<void>;
+  
+  // Playlist Sharing operations
+  sharePlaylistWithUser(share: InsertPlaylistShare): Promise<PlaylistShare>;
+  getPlaylistShares(playlistId: number): Promise<PlaylistShare[]>;
+  removePlaylistShare(playlistId: number, userId: number): Promise<void>;
+  
+  // Shared Watching operations
+  getSharedWatches(userId: number): Promise<SharedWatch[]>;
+  addSharedWatch(sharedWatch: InsertSharedWatch): Promise<SharedWatch>;
+  removeSharedWatch(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
