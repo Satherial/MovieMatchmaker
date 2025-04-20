@@ -103,10 +103,21 @@ const Home: FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header toggleHistory={() => setShowHistory(!showHistory)} />
+      <Header />
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {isMobile && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="w-full flex items-center justify-center py-2 px-4 border border-primary rounded-md text-primary hover:bg-primary hover:text-white transition-colors"
+              >
+                {showHistory ? 'Hide Watch History' : 'Show Watch History'}
+              </button>
+            </div>
+          )}
+          
           <div className="flex flex-col md:flex-row">
             {/* Sidebar */}
             <div className="md:w-1/4 md:pr-8 mb-6 md:mb-0">
