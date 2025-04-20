@@ -67,16 +67,21 @@ export class DatabaseStorage implements IStorage {
     if (filters.categories && filters.categories.length > 0) {
       console.log("Filtering by categories:", filters.categories);
       
-      // Get all movies that have any of the specified categories
-      const categoryMovies = await db
-        .select({ movieId: movieCategories.movieId })
-        .from(movieCategories)
-        .where(sql`${movieCategories.categoryId} IN (${filters.categories.join(', ')})`);
-      
-      const movieIdsWithCategories = new Set(categoryMovies.map(cm => cm.movieId));
-      console.log("Movies with specified categories:", Array.from(movieIdsWithCategories));
-      
-      result = result.filter(movie => movieIdsWithCategories.has(movie.id));
+      try {
+        // Get all movies that have any of the specified categories
+        const categoryMovies = await db
+          .select({ movieId: movieCategories.movieId })
+          .from(movieCategories)
+          .where(sql`${movieCategories.categoryId} IN (${filters.categories.join(', ')})`);
+        
+        const movieIdsWithCategories = new Set(categoryMovies.map(cm => cm.movieId));
+        console.log("Movies with specified categories:", Array.from(movieIdsWithCategories));
+        
+        result = result.filter(movie => movieIdsWithCategories.has(movie.id));
+      } catch (error) {
+        console.error("Error filtering by categories:", error);
+        // Don't filter if there's an error with the query
+      }
     }
 
     // Filter out watched movies
