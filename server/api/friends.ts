@@ -14,7 +14,20 @@ friendsRouter.get("/", async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const friendships = await storage.getFriendships(userId, "accepted");
   
-  return res.json(friendships);
+  // Load friend details for each friendship
+  const friendshipsWithDetails = await Promise.all(
+    friendships.map(async (friendship) => {
+      // Determine which user ID is the friend (not the current user)
+      const friendId = friendship.userId === userId ? friendship.friendId : friendship.userId;
+      const friend = await storage.getUser(friendId);
+      return {
+        ...friendship,
+        friend
+      };
+    })
+  );
+  
+  return res.json(friendshipsWithDetails);
 });
 
 // Get incoming friend requests
@@ -26,7 +39,18 @@ friendsRouter.get("/requests", async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const requests = await storage.getFriendshipRequests(userId);
   
-  return res.json(requests);
+  // Load friend details for each request
+  const requestsWithFriendDetails = await Promise.all(
+    requests.map(async (request) => {
+      const friend = await storage.getUser(request.userId); // The sender is the userId
+      return {
+        ...request,
+        friend
+      };
+    })
+  );
+  
+  return res.json(requestsWithFriendDetails);
 });
 
 // Get outgoing friend requests
@@ -45,7 +69,18 @@ friendsRouter.get("/sent-requests", async (req: Request, res: Response) => {
     f => f.userId === userId && f.status === "pending"
   );
   
-  return res.json(sentRequests);
+  // Load friend details for each request
+  const requestsWithFriendDetails = await Promise.all(
+    sentRequests.map(async (request) => {
+      const friend = await storage.getUser(request.friendId);
+      return {
+        ...request,
+        friend
+      };
+    })
+  );
+  
+  return res.json(requestsWithFriendDetails);
 });
 
 // Search for users to add as friends
