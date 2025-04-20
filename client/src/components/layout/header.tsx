@@ -187,6 +187,12 @@ export default function Header() {
                       Profile
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/friends" className="cursor-pointer flex w-full items-center">
+                      <Users2 className="mr-2 h-4 w-4" />
+                      Friends
+                    </Link>
+                  </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
