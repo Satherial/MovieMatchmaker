@@ -3,8 +3,8 @@ import { db } from "./db";
 import {
   User, InsertUser, users,
   Movie, InsertMovie, movies,
-  Category, InsertCategory, categories,
-  MovieCategory, InsertMovieCategory, movieCategories,
+  Genre, InsertGenre, categories,
+  MovieGenre, InsertMovieGenre, movieCategories,
   WatchHistory, InsertWatchHistory, watchHistory
 } from "@shared/schema";
 import { IStorage } from "./storage";
@@ -123,46 +123,46 @@ export class DatabaseStorage implements IStorage {
     return movie;
   }
 
-  // Category operations
-  async getCategories(): Promise<Category[]> {
+  // Genre operations (renamed from Category)
+  async getCategories(): Promise<Genre[]> {
     return db.select().from(categories);
   }
 
-  async getCategory(id: number): Promise<Category | undefined> {
-    const [category] = await db.select().from(categories).where(eq(categories.id, id));
-    return category || undefined;
+  async getCategory(id: number): Promise<Genre | undefined> {
+    const [genre] = await db.select().from(categories).where(eq(categories.id, id));
+    return genre || undefined;
   }
 
-  async getCategoryByName(name: string): Promise<Category | undefined> {
-    const [category] = await db
+  async getCategoryByName(name: string): Promise<Genre | undefined> {
+    const [genre] = await db
       .select()
       .from(categories)
       .where(eq(sql`LOWER(${categories.name})`, name.toLowerCase()));
-    return category || undefined;
+    return genre || undefined;
   }
 
-  async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const [category] = await db
+  async createCategory(insertGenre: InsertGenre): Promise<Genre> {
+    const [genre] = await db
       .insert(categories)
-      .values(insertCategory)
+      .values(insertGenre)
       .returning();
-    return category;
+    return genre;
   }
 
-  // Movie Category operations
-  async getMovieCategories(movieId: number): Promise<MovieCategory[]> {
+  // Movie Genre operations (renamed from Movie Category)
+  async getMovieCategories(movieId: number): Promise<MovieGenre[]> {
     return db
       .select()
       .from(movieCategories)
       .where(eq(movieCategories.movieId, movieId));
   }
 
-  async addCategoryToMovie(insertMovieCategory: InsertMovieCategory): Promise<MovieCategory> {
-    const [movieCategory] = await db
+  async addCategoryToMovie(insertMovieGenre: InsertMovieGenre): Promise<MovieGenre> {
+    const [movieGenre] = await db
       .insert(movieCategories)
-      .values(insertMovieCategory)
+      .values(insertMovieGenre)
       .returning();
-    return movieCategory;
+    return movieGenre;
   }
 
   // Watch History operations

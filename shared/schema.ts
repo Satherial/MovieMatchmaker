@@ -25,48 +25,48 @@ export type InsertMovie = z.infer<typeof insertMovieSchema>;
 export type Movie = typeof movies.$inferSelect;
 
 export const moviesRelations = relations(movies, ({ many }) => ({
-  movieCategories: many(movieCategories),
+  movieGenres: many(movieCategories),
   watchHistory: many(watchHistory),
 }));
 
-// Categories table
+// Genres table (renamed from categories)
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
 });
 
-export const insertCategorySchema = createInsertSchema(categories).pick({
+export const insertGenreSchema = createInsertSchema(categories).pick({
   name: true,
 });
 
-export type InsertCategory = z.infer<typeof insertCategorySchema>;
-export type Category = typeof categories.$inferSelect;
+export type InsertGenre = z.infer<typeof insertGenreSchema>;
+export type Genre = typeof categories.$inferSelect;
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
   movieCategories: many(movieCategories),
 }));
 
-// Movie Categories (junction table)
+// Movie Genres (junction table) - renamed from Movie Categories
 export const movieCategories = pgTable("movie_categories", {
   id: serial("id").primaryKey(),
   movieId: integer("movie_id").notNull().references(() => movies.id),
   categoryId: integer("category_id").notNull().references(() => categories.id),
 });
 
-export const insertMovieCategorySchema = createInsertSchema(movieCategories).pick({
+export const insertMovieGenreSchema = createInsertSchema(movieCategories).pick({
   movieId: true,
   categoryId: true,
 });
 
-export type InsertMovieCategory = z.infer<typeof insertMovieCategorySchema>;
-export type MovieCategory = typeof movieCategories.$inferSelect;
+export type InsertMovieGenre = z.infer<typeof insertMovieGenreSchema>;
+export type MovieGenre = typeof movieCategories.$inferSelect;
 
 export const movieCategoriesRelations = relations(movieCategories, ({ one }) => ({
   movie: one(movies, {
     fields: [movieCategories.movieId],
     references: [movies.id],
   }),
-  category: one(categories, {
+  genre: one(categories, {
     fields: [movieCategories.categoryId],
     references: [categories.id],
   }),
