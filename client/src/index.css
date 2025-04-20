@@ -11,3 +11,22 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Fix transparency issues in mobile menus */
+.bg-card,
+.bg-popover,
+.bg-background,
+.bg-muted,
+.bg-input,
+[class*="bg-"] {
+  background-color: white !important;
+}
+
+.dark .bg-card,
+.dark .bg-popover,
+.dark .bg-background,
+.dark .bg-muted,
+.dark .bg-input,
+.dark [class*="bg-"] {
+  background-color: #1a1a1a !important;
+}
