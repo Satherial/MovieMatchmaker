@@ -119,6 +119,52 @@ const MovieDetail: FC = () => {
             <h2 className="text-xl font-semibold mb-3">Description</h2>
             <p className="text-gray-700 leading-relaxed">{movie.description}</p>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
+            {movie.director && (
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Director</h3>
+                <p className="text-gray-700">{movie.director}</p>
+              </div>
+            )}
+            
+            {movie.actors && (
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Cast</h3>
+                <p className="text-gray-700">{movie.actors}</p>
+              </div>
+            )}
+            
+            {movie.duration && (
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Duration</h3>
+                <p className="text-gray-700">{movie.duration} min</p>
+              </div>
+            )}
+            
+            {movie.releaseDate && (
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Release Date</h3>
+                <p className="text-gray-700">{movie.releaseDate}</p>
+              </div>
+            )}
+            
+            {movie.country && (
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Country</h3>
+                <p className="text-gray-700">{movie.country}</p>
+              </div>
+            )}
+            
+            {movie.language && (
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Language</h3>
+                <p className="text-gray-700">{movie.language}</p>
+              </div>
+            )}
+          </div>
+          
+          <Separator className="my-4" />
           
           <Button 
             className="w-full md:w-auto px-8 py-6 text-lg"

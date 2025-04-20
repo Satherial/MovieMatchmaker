@@ -11,6 +11,12 @@ export const movies = pgTable("movies", {
   year: integer("year").notNull(),
   rating: doublePrecision("rating").notNull(),
   imageUrl: text("image_url").notNull(),
+  director: text("director"),
+  actors: text("actors"),
+  duration: integer("duration"),
+  country: text("country"),
+  language: text("language"),
+  releaseDate: text("release_date"),
 });
 
 export const insertMovieSchema = createInsertSchema(movies).pick({
@@ -19,6 +25,12 @@ export const insertMovieSchema = createInsertSchema(movies).pick({
   year: true,
   rating: true,
   imageUrl: true,
+  director: true,
+  actors: true,
+  duration: true,
+  country: true,
+  language: true,
+  releaseDate: true,
 });
 
 export type InsertMovie = z.infer<typeof insertMovieSchema>;
