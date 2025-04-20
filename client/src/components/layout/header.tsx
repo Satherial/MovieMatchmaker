@@ -17,7 +17,8 @@ import {
   Menu, 
   Search, 
   X,
-  Settings
+  Settings,
+  Users2
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
@@ -72,6 +73,15 @@ export default function Header() {
               >
                 My Playlists
               </Link>
+              <Link 
+                href="/friends" 
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location === "/friends" ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                Friends
+              </Link>
             </nav>
           )}
         </div>
@@ -116,6 +126,15 @@ export default function Header() {
                     >
                       <User size={20} />
                       Profile
+                    </Link>
+                    
+                    <Link 
+                      href="/friends" 
+                      className="flex items-center gap-2 text-lg font-medium p-2 rounded-md hover:bg-accent"
+                      onClick={closeMenu}
+                    >
+                      <Users2 size={20} />
+                      Friends
                     </Link>
 
 
