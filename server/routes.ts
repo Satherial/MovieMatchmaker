@@ -27,7 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.isAuthenticated()) {
       return next();
     }
-    res.status(401).json({ error: "Unauthorized - Please log in" });
+    res.status(401).send("Unauthorized - Please log in");
   };
   
   // Get all categories
