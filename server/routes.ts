@@ -11,6 +11,11 @@ import { setupAuth } from "./auth";
 import * as tmdbClient from "./tmdb-client";
 import { setupMCPRoutes } from "./mcp/routes";
 
+// Import our new API routers
+import friendsRouter from "./api/friends";
+import playlistSharesRouter from "./api/playlist-shares";
+import sharedWatchesRouter from "./api/shared-watches";
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
@@ -801,6 +806,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api", apiRouter);
   
   // Set up MCP routes for LLM interaction
+  // Register our social feature routers
+  apiRouter.use("/friends", friendsRouter);
+  apiRouter.use("/playlist-shares", playlistSharesRouter);
+  apiRouter.use("/shared-watches", sharedWatchesRouter);
+  
+  // Register MCP routes
   setupMCPRoutes(apiRouter);
   
   // Create and return the HTTP server
