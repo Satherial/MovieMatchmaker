@@ -653,7 +653,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.use("/friends", friendsRouter);
   apiRouter.use("/playlist-shares", playlistSharesRouter);
   apiRouter.use("/shared-watches", sharedWatchesRouter);
-  apiRouter.use("/movies", movieTrailerRouter);
+  
+  // Add the trailer endpoint separately
+  app.use("/api/movies", movieTrailerRouter);
   
   // Set up MCP routes for LLM interaction
   // Register MCP routes under /api/mcp
