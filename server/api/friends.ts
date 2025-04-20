@@ -152,16 +152,16 @@ friendsRouter.post("/accept/:id", async (req: Request, res: Response) => {
     if (error instanceof Error) {
       // Convert technical error message to user-friendly one
       let friendlyMessage = "Failed to accept friend request";
-      return res.status(400).json({ error: friendlyMessage });
+      return res.status(400).send(friendlyMessage);
     }
-    return res.status(500).json({ error: "Failed to accept friend request" });
+    return res.status(500).send("Failed to accept friend request");
   }
 });
 
 // Reject a friend request
 friendsRouter.post("/reject/:id", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const userId = req.user!.id;
@@ -175,16 +175,16 @@ friendsRouter.post("/reject/:id", async (req: Request, res: Response) => {
     if (error instanceof Error) {
       // Convert technical error message to user-friendly one
       let friendlyMessage = "Failed to reject friend request";
-      return res.status(400).json({ error: friendlyMessage });
+      return res.status(400).send(friendlyMessage);
     }
-    return res.status(500).json({ error: "Failed to reject friend request" });
+    return res.status(500).send("Failed to reject friend request");
   }
 });
 
 // Remove a friend
 friendsRouter.delete("/:friendId", async (req: Request, res: Response) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Not authenticated" });
+    return res.status(401).send("Not authenticated");
   }
 
   const userId = req.user!.id;
@@ -198,9 +198,9 @@ friendsRouter.delete("/:friendId", async (req: Request, res: Response) => {
     if (error instanceof Error) {
       // Convert technical error message to user-friendly one
       let friendlyMessage = "Failed to remove friend";
-      return res.status(400).json({ error: friendlyMessage });
+      return res.status(400).send(friendlyMessage);
     }
-    return res.status(500).json({ error: "Failed to remove friend" });
+    return res.status(500).send("Failed to remove friend");
   }
 });
 
