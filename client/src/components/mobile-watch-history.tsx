@@ -80,9 +80,10 @@ const MobileWatchHistory: FC<MobileWatchHistoryProps> = ({
             watchHistory.map((item) => (
               <div key={item.id} className="flex items-center space-x-3 pb-3 border-b border-gray-100">
                 <img 
-                  src={item.movie?.imageUrl} 
+                  src={imageErrors[item.id] || !item.movie?.imageUrl ? placeholderImage : item.movie.imageUrl} 
                   alt={item.movie?.title || "Movie"} 
                   className="w-12 h-16 object-cover rounded-md"
+                  onError={() => setImageErrors(prev => ({ ...prev, [item.id]: true }))}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
