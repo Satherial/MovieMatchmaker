@@ -1,15 +1,14 @@
-import { FC, useState, useEffect } from 'react';
-import YouTube from 'react-youtube';
+import { FC, useState, useEffect } from "react";
+import YouTube from "react-youtube";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Film } from "lucide-react";
 
 interface MovieTrailerProps {
-  movieTitle: string;
-  movieYear?: number;
+  movieId: number;
 }
 
-const MovieTrailer: FC<MovieTrailerProps> = ({ movieTitle, movieYear }) => {
+const MovieTrailer: FC<MovieTrailerProps> = ({ movieId }) => {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -19,41 +18,41 @@ const MovieTrailer: FC<MovieTrailerProps> = ({ movieTitle, movieYear }) => {
       try {
         setLoading(true);
         setError(false);
-        
+
         // Include year in search query if available for better results
-        const searchQuery = movieYear 
-          ? `${movieTitle} ${movieYear} official trailer`
-          : `${movieTitle} official trailer`;
-        
-        const response = await fetch(`/api/trailer?query=${encodeURIComponent(searchQuery)}`);
-        
+        const searchQuery = movieId;
+
+        const response = await fetch(
+          `/api/trailer?query=${encodeURIComponent(searchQuery)}`
+        );
+
         if (!response.ok) {
-          throw new Error('Failed to fetch trailer');
+          throw new Error("Failed to fetch trailer");
         }
-        
+
         const data = await response.json();
-        
+
         if (data && data.videoId) {
           setVideoId(data.videoId);
         } else {
           setError(true);
         }
       } catch (err) {
-        console.error('Error fetching trailer:', err);
+        console.error("Error fetching trailer:", err);
         setError(true);
       } finally {
         setLoading(false);
       }
     };
 
-    if (movieTitle) {
+    if (movieId) {
       fetchTrailer();
     }
-  }, [movieTitle, movieYear]);
+  }, [movieId]);
 
   const opts = {
-    height: '390',
-    width: '100%',
+    height: "390",
+    width: "100%",
     playerVars: {
       // https://developers.google.com/youtube/player_parameters
       autoplay: 0,

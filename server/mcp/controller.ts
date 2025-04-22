@@ -1804,7 +1804,7 @@ export class MCPController {
         `${this.TMDB_BASE_URL}/discover/movie?${queryParams.toString()}`,
         {
           headers: {
-            Authorization: `Bearer ${TMDB_API_KEY}`,
+            Authorization: `Bearer ${TMDB_API_TOKEN}`,
             "Content-Type": "application/json",
           },
         }
@@ -1890,7 +1890,7 @@ export class MCPController {
         `${this.TMDB_BASE_URL}/movie/${movieId}`,
         {
           headers: {
-            Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+            Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
             "Content-Type": "application/json",
           },
         }
@@ -1962,7 +1962,7 @@ export class MCPController {
         `${this.TMDB_BASE_URL}/genre/movie/list`,
         {
           headers: {
-            Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+            Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
             "Content-Type": "application/json",
           },
         }

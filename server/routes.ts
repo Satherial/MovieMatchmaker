@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Make request to TMDB API for genres list
       const tmdbResponse = await fetch(`${TMDB_BASE_URL}/genre/movie/list`, {
         headers: {
-          Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+          Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
           "Content-Type": "application/json",
         },
       });
@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `${TMDB_BASE_URL}/discover/movie?${queryParams.toString()}`,
         {
           headers: {
-            Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+            Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
             "Content-Type": "application/json",
           },
         }
@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get genres for each movie from TMDB
       const genresResponse = await fetch(`${TMDB_BASE_URL}/genre/movie/list`, {
         headers: {
-          Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+          Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
           "Content-Type": "application/json",
         },
       });
@@ -239,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Make request to TMDB API for movie details
       const tmdbResponse = await fetch(`${TMDB_BASE_URL}/movie/${id}`, {
         headers: {
-          Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+          Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
           "Content-Type": "application/json",
         },
       });
