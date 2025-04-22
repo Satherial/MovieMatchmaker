@@ -11,22 +11,23 @@ friendsRouter.get("/", async (req: Request, res: Response) => {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = req.user!.id;
+  const userId = (req.user as any)!.id;
   const friendships = await storage.getFriendships(userId, "accepted");
-  
+
   // Load friend details for each friendship
   const friendshipsWithDetails = await Promise.all(
     friendships.map(async (friendship) => {
       // Determine which user ID is the friend (not the current user)
-      const friendId = friendship.userId === userId ? friendship.friendId : friendship.userId;
+      const friendId =
+        friendship.userId === userId ? friendship.friendId : friendship.userId;
       const friend = await storage.getUser(friendId);
       return {
         ...friendship,
-        friend
+        friend,
       };
     })
   );
-  
+
   return res.json(friendshipsWithDetails);
 });
 
@@ -36,20 +37,20 @@ friendsRouter.get("/requests", async (req: Request, res: Response) => {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = req.user!.id;
+  const userId = (req.user as any)!.id;
   const requests = await storage.getFriendshipRequests(userId);
-  
+
   // Load friend details for each request
   const requestsWithFriendDetails = await Promise.all(
     requests.map(async (request) => {
       const friend = await storage.getUser(request.userId); // The sender is the userId
       return {
         ...request,
-        friend
+        friend,
       };
     })
   );
-  
+
   return res.json(requestsWithFriendDetails);
 });
 
@@ -59,27 +60,27 @@ friendsRouter.get("/sent-requests", async (req: Request, res: Response) => {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = req.user!.id;
-  
+  const userId = (req.user as any)!.id;
+
   // Get all friendships
   const allFriendships = await storage.getFriendships(userId);
-  
+
   // Filter for outgoing pending requests
   const sentRequests = allFriendships.filter(
-    f => f.userId === userId && f.status === "pending"
+    (f) => f.userId === userId && f.status === "pending"
   );
-  
+
   // Load friend details for each request
   const requestsWithFriendDetails = await Promise.all(
     sentRequests.map(async (request) => {
       const friend = await storage.getUser(request.friendId);
       return {
         ...request,
-        friend
+        friend,
       };
     })
   );
-  
+
   return res.json(requestsWithFriendDetails);
 });
 
@@ -94,7 +95,7 @@ friendsRouter.get("/search", async (req: Request, res: Response) => {
     return res.status(400).send("Search query must be at least 3 characters");
   }
 
-  const users = await storage.searchUsers(query, req.user!.id);
+  const users = await storage.searchUsers(query, (req.user as any)!.id);
   return res.json(users);
 });
 
@@ -104,9 +105,9 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = req.user!.id;
+  const userId = (req.user as any)!.id;
   const friendId = z.object({ friendId: z.number() }).parse(req.body).friendId;
-  
+
   if (userId === friendId) {
     return res.status(400).send("You cannot send a friend request to yourself");
   }
@@ -114,19 +115,26 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
   try {
     // Check if there is already a friendship (in any status)
     const existingFriendships = await storage.getFriendships(userId);
-    const existingFriendship = existingFriendships.find(f => 
-      (f.userId === userId && f.friendId === friendId) || 
-      (f.userId === friendId && f.friendId === userId)
+    const existingFriendship = existingFriendships.find(
+      (f) =>
+        (f.userId === userId && f.friendId === friendId) ||
+        (f.userId === friendId && f.friendId === userId)
     );
 
     if (existingFriendship) {
       if (existingFriendship.status === "pending") {
         if (existingFriendship.userId === userId) {
           // User already sent a request to this friend
-          return res.status(400).send("You already sent a friend request to this user");
+          return res
+            .status(400)
+            .send("You already sent a friend request to this user");
         } else {
           // Friend already sent a request to the user
-          return res.status(400).send("This user has already sent you a friend request. Check your pending requests.");
+          return res
+            .status(400)
+            .send(
+              "This user has already sent you a friend request. Check your pending requests."
+            );
         }
       } else if (existingFriendship.status === "accepted") {
         return res.status(400).send("This user is already your friend");
@@ -134,11 +142,16 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
         // If it was rejected, check who rejected it
         if (existingFriendship.userId === userId) {
           // The current user sent the initial request that was rejected
-          return res.status(400).send("This user has rejected your friend request");
+          return res
+            .status(400)
+            .send("This user has rejected your friend request");
         } else {
           // The current user rejected the other user's request
           // Allow sending a new request if the current user is the one who rejected
-          const friendship = await storage.updateFriendshipStatus(existingFriendship.id, "pending");
+          const friendship = await storage.updateFriendshipStatus(
+            existingFriendship.id,
+            "pending"
+          );
           return res.status(201).json(friendship);
         }
       }
@@ -148,24 +161,24 @@ friendsRouter.post("/request", async (req: Request, res: Response) => {
     const friendship = await storage.createFriendship({
       userId,
       friendId,
-      status: "pending"
+      status: "pending",
     });
-    
+
     return res.status(201).json(friendship);
   } catch (error) {
     console.error("Error creating friendship:", error);
-    
+
     // Convert technical error messages to user-friendly ones
     if (error instanceof Error) {
       let friendlyMessage = "Failed to send friend request";
-      
+
       if (error.message.includes("already exists")) {
         friendlyMessage = "You've already sent a friend request to this user";
       }
-      
+
       return res.status(400).send(friendlyMessage);
     }
-    
+
     return res.status(500).send("Failed to send friend request");
   }
 });
@@ -176,11 +189,14 @@ friendsRouter.post("/accept/:id", async (req: Request, res: Response) => {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = req.user!.id;
+  const userId = (req.user as any)!.id;
   const friendshipId = parseInt(req.params.id);
-  
+
   try {
-    const friendship = await storage.updateFriendshipStatus(friendshipId, "accepted");
+    const friendship = await storage.updateFriendshipStatus(
+      friendshipId,
+      "accepted"
+    );
     return res.json(friendship);
   } catch (error) {
     console.error("Error accepting friendship:", error);
@@ -199,11 +215,14 @@ friendsRouter.post("/reject/:id", async (req: Request, res: Response) => {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = req.user!.id;
+  const userId = (req.user as any)!.id;
   const friendshipId = parseInt(req.params.id);
-  
+
   try {
-    const friendship = await storage.updateFriendshipStatus(friendshipId, "rejected");
+    const friendship = await storage.updateFriendshipStatus(
+      friendshipId,
+      "rejected"
+    );
     return res.json(friendship);
   } catch (error) {
     console.error("Error rejecting friendship:", error);
@@ -222,9 +241,9 @@ friendsRouter.delete("/:friendId", async (req: Request, res: Response) => {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = req.user!.id;
+  const userId = (req.user as any)!.id;
   const friendId = parseInt(req.params.friendId);
-  
+
   try {
     await storage.deleteFriendship(userId, friendId);
     return res.status(204).end();

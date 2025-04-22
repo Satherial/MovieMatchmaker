@@ -12,7 +12,7 @@ sharedWatchesRouter.get("/", async (req: Request, res: Response) => {
   }
 
   try {
-    const userId = req.user!.id;
+    const userId = (req.user as any)!.id;
     const sharedWatches = await storage.getSharedWatches(userId);
     return res.json(sharedWatches);
   } catch (error) {
@@ -28,60 +28,65 @@ sharedWatchesRouter.post("/", async (req: Request, res: Response) => {
   }
 
   try {
-    const { movieId, watchedWithUserId, watchedAt, notes } = z.object({
-      movieId: z.number(),
-      watchedWithUserId: z.number(),
-      watchedAt: z.string().default(() => new Date().toISOString()),
-      notes: z.string().optional()
-    }).parse(req.body);
-    
-    const userId = req.user!.id;
-    
+    const { movieId, watchedWithUserId, watchedAt, notes } = z
+      .object({
+        movieId: z.number(),
+        watchedWithUserId: z.number(),
+        watchedAt: z.string().default(() => new Date().toISOString()),
+        notes: z.string().optional(),
+      })
+      .parse(req.body);
+
+    const userId = (req.user as any)!.id;
+
     // Verify the movie exists
     const movie = await storage.getMovie(movieId);
     if (!movie) {
       return res.status(404).json({ error: "Movie not found" });
     }
-    
+
     // Verify the friend exists
     const friend = await storage.getUser(watchedWithUserId);
     if (!friend) {
       return res.status(404).json({ error: "User not found" });
     }
-    
+
     // Check if they are friends
     const friendships = await storage.getFriendships(userId, "accepted");
-    const isFriend = friendships.some(f => 
-      (f.userId === userId && f.friendId === watchedWithUserId) || 
-      (f.userId === watchedWithUserId && f.friendId === userId)
+    const isFriend = friendships.some(
+      (f) =>
+        (f.userId === userId && f.friendId === watchedWithUserId) ||
+        (f.userId === watchedWithUserId && f.friendId === userId)
     );
-    
+
     if (!isFriend) {
-      return res.status(403).json({ error: "You can only share watch activity with friends" });
+      return res
+        .status(403)
+        .json({ error: "You can only share watch activity with friends" });
     }
-    
+
     // Record in watch history for both users
     await storage.addToWatchHistory({
       userId,
       movieId,
-      watchedAt: new Date(watchedAt)
-    });
-    
+      watchedAt: new Date(watchedAt),
+    } as any);
+
     await storage.addToWatchHistory({
       userId: watchedWithUserId,
       movieId,
-      watchedAt: new Date(watchedAt)
-    });
-    
+      watchedAt: new Date(watchedAt),
+    } as any);
+
     // Create the shared watch record
     const sharedWatch = await storage.addSharedWatch({
       userId,
       movieId,
       watchedWithUserId,
       watchedAt: new Date(watchedAt),
-      notes: notes || null
-    });
-    
+      notes: notes || null,
+    } as any);
+
     return res.status(201).json(sharedWatch);
   } catch (error) {
     console.error("Error creating shared watch:", error);

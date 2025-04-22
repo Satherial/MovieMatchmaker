@@ -11,7 +11,13 @@ import { pool } from "./db";
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User {
+      id: number;
+      username: string;
+      email: string;
+      fullName: string;
+      avatarUrl: string;
+    }
   }
 }
 
@@ -35,26 +41,26 @@ export async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   // Create PostgreSQL session store
   const PostgresStore = connectPgSimple(session);
-  
+
   // Session configuration
   const sessionSettings: session.SessionOptions = {
     store: new PostgresStore({
       pool,
-      tableName: 'session',
+      tableName: "session",
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || 'movie-recommender-secret',
+    secret: process.env.SESSION_SECRET || "movie-recommender-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      secure: process.env.NODE_ENV === 'production',
-    }
+      secure: process.env.NODE_ENV === "production",
+    },
   };
 
   // Set up sessions
   app.use(session(sessionSettings));
-  
+
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
@@ -65,18 +71,18 @@ export function setupAuth(app: Express) {
       try {
         // Find user by username
         const user = await storage.getUserByUsername(username);
-        
+
         // If user not found or password doesn't match
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         }
-        
+
         // Authentication successful
-        return done(null, user);
+        return done(null, user as any);
       } catch (error) {
         return done(error);
       }
-    }),
+    })
   );
 
   // Serialize user to session
@@ -91,7 +97,7 @@ export function setupAuth(app: Express) {
       if (!user) {
         return done(null, false);
       }
-      return done(null, user);
+      return done(null, user as any);
     } catch (error) {
       return done(error);
     }
@@ -114,9 +120,9 @@ export function setupAuth(app: Express) {
       });
 
       // Auto-login the user after registration
-      req.login(user, (err) => {
+      req.login(user as any, (err) => {
         if (err) return next(err);
-        
+
         // Return user without password
         const { password, ...userWithoutPassword } = user;
         res.status(201).json(userWithoutPassword);
@@ -128,13 +134,13 @@ export function setupAuth(app: Express) {
 
   // Login route
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(401).send("Invalid credentials");
-      
+
       req.login(user, (err) => {
         if (err) return next(err);
-        
+
         // Return user without password
         const { password, ...userWithoutPassword } = user;
         res.json(userWithoutPassword);
@@ -157,61 +163,62 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not authenticated");
     }
-    
+
     // Return user without password
-    const { password, ...userWithoutPassword } = req.user;
+    const { password, ...userWithoutPassword } = req.user as any;
     res.json(userWithoutPassword);
   });
-  
+
   // Profile update route
   app.put("/api/profile", (req, res, next) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not authenticated");
     }
-    
+
     // Update user profile
     const userId = req.user.id;
-    
+
     // Prevent updating username and password this way
     const { username, password, ...updateData } = req.body;
-    
-    storage.updateUser(userId, updateData)
-      .then(updatedUser => {
+
+    storage
+      .updateUser(userId, updateData)
+      .then((updatedUser) => {
         // Return user without password
         const { password, ...userWithoutPassword } = updatedUser;
         res.json(userWithoutPassword);
       })
-      .catch(error => next(error));
+      .catch((error) => next(error));
   });
-  
+
   // Password change route
   app.post("/api/change-password", async (req, res, next) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not authenticated");
     }
-    
+
     try {
       const userId = req.user.id;
       const { currentPassword, newPassword } = req.body;
-      
+
       // Verify current password
       const user = await storage.getUser(userId);
       if (!user || !(await comparePasswords(currentPassword, user.password))) {
         return res.status(400).send("Current password is incorrect");
       }
-      
+
       // Hash new password
       const hashedPassword = await hashPassword(newPassword);
-      
+
       // Update password
       await storage.updateUser(userId, { password: hashedPassword });
-      
+
       res.json({ message: "Password updated successfully" });
     } catch (error) {
       next(error);
     }
   });
-  
+
   // Middleware to ensure authentication
   app.use("/api/protected", (req, res, next) => {
     if (req.isAuthenticated()) {
