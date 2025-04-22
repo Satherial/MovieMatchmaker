@@ -4,14 +4,12 @@ import {
   MCPResponse,
   MCPMovieFilterRequest,
   MCPAddToWatchHistoryRequest,
-  MCPLoginRequest,
   MCPRegisterRequest,
   MCPPlaylistListResponse,
   MCPPlaylistResponse,
   MCPCreatePlaylistRequest,
   MCPUpdatePlaylistRequest,
   MCPAddToPlaylistRequest,
-  MCPUpdatePlaylistItemRequest,
   MCPReorderPlaylistItemsRequest,
   MCPFriendRequestRequest,
   MCPSharePlaylistRequest,
@@ -27,12 +25,30 @@ import passport from "passport";
 import { hashPassword } from "../auth";
 import { insertUserSchema, insertPlaylistSchema } from "@shared/schema";
 
+// TMDB Movie type definition
+interface TMDBMovie {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date: string;
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
+  genre_ids: number[];
+}
+
 /**
  * MCP Controller - Handles requests from LLM models
  * This controller provides a consistent API for AI models to interact with
  * the movie recommendation system
  */
 export class MCPController {
+  // TMDB API configuration
+  private readonly TMDB_BASE_URL = "https://api.themoviedb.org/3";
+  private readonly TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
   // ====== Playlist Methods ======
 
   /**
@@ -1739,12 +1755,86 @@ export class MCPController {
       res.status(500).json(response);
     }
   }
+
   /**
    * Get a list of movies with optional filtering
    */
   async getMovies(req: Request, res: Response) {
     try {
       const filters = req.body as MCPMovieFilterRequest;
+
+      // TMDB API configuration
+      const TMDB_API_KEY = process.env.TMDB_API_KEY;
+
+      // Build query parameters for TMDB API
+      const queryParams = new URLSearchParams({
+        include_adult: "false",
+        include_video: "false",
+        language: "en-US",
+        page: "1",
+        sort_by: filters.sort || "popularity.desc",
+      });
+
+      // Add year filter if provided
+      if (filters.yearFrom && filters.yearFrom !== "Any") {
+        queryParams.append(
+          "primary_release_date.gte",
+          `${filters.yearFrom}-01-01`
+        );
+      }
+      if (filters.yearTo && filters.yearTo !== "Any") {
+        queryParams.append(
+          "primary_release_date.lte",
+          `${filters.yearTo}-12-31`
+        );
+      }
+
+      // Add minimum rating filter if provided
+      if (filters.minRating) {
+        queryParams.append("vote_average.gte", filters.minRating.toString());
+      }
+
+      // Add genre/category filter if provided
+      if (filters.categories && filters.categories.length > 0) {
+        queryParams.append("with_genres", filters.categories.join(","));
+      }
+
+      // Make request to TMDB API
+      const tmdbResponse = await fetch(
+        `${this.TMDB_BASE_URL}/discover/movie?${queryParams.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${TMDB_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!tmdbResponse.ok) {
+        throw new Error(`TMDB API error: ${tmdbResponse.status}`);
+      }
+
+      const tmdbData = await tmdbResponse.json();
+
+      // Transform TMDB response to match our app's format
+      const movies = tmdbData.results.map((movie: TMDBMovie) => ({
+        id: movie.id,
+        title: movie.title,
+        overview: movie.overview,
+        posterPath: movie.poster_path
+          ? `${this.TMDB_IMAGE_BASE_URL}${movie.poster_path}`
+          : null,
+        backdropPath: movie.backdrop_path
+          ? `${this.TMDB_IMAGE_BASE_URL}${movie.backdrop_path}`
+          : null,
+        releaseDate: movie.release_date,
+        voteAverage: movie.vote_average,
+        voteCount: movie.vote_count,
+        popularity: movie.popularity,
+        categories: movie.genre_ids, // These are IDs, we'll need to fetch genre names separately
+      }));
+
+      console.log("TMDB Movies", movies);
 
       // Get watched movie IDs if user is authenticated
       let watchedMovieIds: number[] = [];
@@ -1754,66 +1844,29 @@ export class MCPController {
         watchedMovieIds = userWatchHistory.map((item) => item.movieId);
       }
 
-      // Convert category IDs to numbers
-      const categoryIds =
-        filters.categories
-          ?.map((id) => parseInt(id))
-          .filter((id) => !isNaN(id)) || [];
-
-      // Convert year strings to numbers, if provided
-      const yearFrom =
-        filters.yearFrom && filters.yearFrom !== "Any"
-          ? Number(filters.yearFrom)
-          : undefined;
-      const yearTo =
-        filters.yearTo && filters.yearTo !== "Any"
-          ? Number(filters.yearTo)
-          : undefined;
-
-      // Get filtered movies
-      const movies = await storage.getMovies({
-        categories: categoryIds.length > 0 ? categoryIds : undefined,
-        minRating: filters.minRating,
-        yearFrom,
-        yearTo,
-        excludeIds: watchedMovieIds,
-        sort: filters.sort,
-      });
-
-      // Enhance each movie with category names
-      const enhancedMovies = await Promise.all(
-        (movies as any).map(async (movie: any) => {
-          const movieCategories = await storage.getMovieCategories(movie.id);
-          const categories = await Promise.all(
-            movieCategories.map(async (mc) => {
-              const cat = await storage.getCategory(mc.categoryId);
-              return cat ? cat.name : null;
-            })
-          );
-
-          return {
-            ...movie,
-            categories: categories.filter(Boolean) as string[],
-          };
-        })
+      // Filter out watched movies if needed
+      const filteredMovies = movies.filter(
+        (movie: { id: number }) => !watchedMovieIds.includes(movie.id)
       );
 
-      const response: MCPResponse<any> = {
+      console.log("TMDB filteredMovies", filteredMovies);
+
+      const successResponse: MCPResponse<any> = {
         success: true,
         data: {
-          movies: enhancedMovies,
-          totalCount: enhancedMovies.length,
+          movies: filteredMovies,
+          totalCount: filteredMovies.length,
         },
       };
 
-      res.json(response);
+      res.json(successResponse);
     } catch (error) {
       console.error("MCP Error getting movies:", error);
-      const response: MCPResponse<any> = {
+      const errorResponse: MCPResponse<any> = {
         success: false,
         error: "Failed to fetch movies",
       };
-      res.status(500).json(response);
+      res.status(500).json(errorResponse);
     }
   }
 
@@ -1873,11 +1926,36 @@ export class MCPController {
   }
 
   /**
-   * Get a list of all genres/categories
+   * Get a list of all genres/categories from TMDB API
    */
   async getGenres(req: Request, res: Response) {
     try {
-      const genres = await storage.getCategories();
+      // Make request to TMDB API
+      const tmdbResponse = await fetch(
+        `${this.TMDB_BASE_URL}/genre/movie/list`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!tmdbResponse.ok) {
+        throw new Error(`TMDB API error: ${tmdbResponse.status}`);
+      }
+
+      const tmdbData = await tmdbResponse.json();
+
+      console.log("TMDB Genres", tmdbData);
+
+      // Transform TMDB genres to match our app's format
+      const genres = tmdbData.genres.map(
+        (genre: { id: number; name: string }) => ({
+          id: genre.id,
+          name: genre.name,
+        })
+      );
 
       const response: MCPResponse<any> = {
         success: true,
@@ -1888,10 +1966,10 @@ export class MCPController {
 
       res.json(response);
     } catch (error) {
-      console.error("MCP Error getting genres:", error);
+      console.error("MCP Error getting genres from TMDB:", error);
       const response: MCPResponse<any> = {
         success: false,
-        error: "Failed to fetch genres",
+        error: "Failed to fetch genres from TMDB",
       };
       res.status(500).json(response);
     }
