@@ -1871,7 +1871,7 @@ export class MCPController {
   }
 
   /**
-   * Get a single movie by ID
+   * Get a single movie by ID from TMDB
    */
   async getMovie(req: Request, res: Response) {
     try {
@@ -1885,41 +1885,68 @@ export class MCPController {
         return res.status(400).json(response);
       }
 
-      const movie = await storage.getMovie(movieId);
-
-      if (!movie) {
-        const response: MCPResponse<any> = {
-          success: false,
-          error: "Movie not found",
-        };
-        return res.status(404).json(response);
-      }
-
-      // Get movie categories
-      const movieCategories = await storage.getMovieCategories(movie.id);
-      const categories = await Promise.all(
-        movieCategories.map(async (mc) => {
-          const cat = await storage.getCategory(mc.categoryId);
-          return cat ? cat.name : null;
-        })
+      // Make request to TMDB API for movie details
+      const tmdbResponse = await fetch(
+        `${this.TMDB_BASE_URL}/movie/${movieId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
 
-      const enhancedMovie = {
-        ...movie,
-        categories: categories.filter(Boolean) as string[],
+      if (!tmdbResponse.ok) {
+        if (tmdbResponse.status === 404) {
+          const response: MCPResponse<any> = {
+            success: false,
+            error: "Movie not found",
+          };
+          return res.status(404).json(response);
+        }
+        throw new Error(`TMDB API error: ${tmdbResponse.status}`);
+      }
+
+      const tmdbMovie = await tmdbResponse.json();
+
+      // Transform TMDB response to match our app's format
+      const movie = {
+        id: tmdbMovie.id,
+        title: tmdbMovie.title,
+        description: tmdbMovie.overview,
+        year: new Date(tmdbMovie.release_date).getFullYear(),
+        rating: tmdbMovie.vote_average,
+        imageUrl: tmdbMovie.poster_path
+          ? `${this.TMDB_IMAGE_BASE_URL}${tmdbMovie.poster_path}`
+          : null,
+        backdropUrl: tmdbMovie.backdrop_path
+          ? `${this.TMDB_IMAGE_BASE_URL}${tmdbMovie.backdrop_path}`
+          : null,
+        categories: tmdbMovie.genres.map(
+          (genre: { name: string }) => genre.name
+        ),
+        director: tmdbMovie.credits?.crew?.find(
+          (person: { job: string }) => person.job === "Director"
+        )?.name,
+        duration: tmdbMovie.runtime,
+        language: tmdbMovie.original_language,
+        releaseDate: tmdbMovie.release_date,
       };
 
       const response: MCPResponse<any> = {
         success: true,
-        data: enhancedMovie,
+        data: movie,
       };
 
       res.json(response);
     } catch (error) {
-      console.error(`MCP Error fetching movie ${req.params.id}:`, error);
+      console.error(
+        `MCP Error fetching movie ${req.params.id} from TMDB:`,
+        error
+      );
       const response: MCPResponse<any> = {
         success: false,
-        error: "Failed to fetch movie",
+        error: "Failed to fetch movie from TMDB",
       };
       res.status(500).json(response);
     }
