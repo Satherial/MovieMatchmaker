@@ -2149,7 +2149,7 @@ export class MCPController {
       const user = await storage.createUser(userData);
 
       // Log the user in
-      req.login(user, (err) => {
+      req.login(user as any, (err: any) => {
         if (err) {
           console.error("MCP Registration login error:", err);
           const response: MCPResponse<any> = {
