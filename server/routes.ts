@@ -35,6 +35,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(401).send("Unauthorized - Please log in");
   };
 
+  // Define User interface type for TypeScript
+  interface User {
+    id: number;
+    username: string;
+    [key: string]: any; // For any additional properties
+  }
+
+  // Type assertion helper
+  const getAuthUser = (req: Request): User => {
+    return req.user as User;
+  };
+
   // Get all categories
   apiRouter.get("/categories", async (req, res) => {
     try {
@@ -79,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If user is authenticated, only exclude their watched movies
       let watchedMovieIds: number[] = [];
       if (req.isAuthenticated()) {
-        const userId = (req.user as any).id;
+        const userId = getAuthUser(req).id;
         const userWatchHistory = await storage.getWatchHistory(userId);
         watchedMovieIds = userWatchHistory.map((item) => item.movieId);
       }
@@ -94,11 +106,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         include_video: "false",
         language: "en-US",
         page: (query.page as string) || "1",
-        sort_by:
-          query.sort === "rating_desc"
-            ? "vote_average.desc"
-            : "popularity.desc",
+        sort_by: (query.sort as string) || "primary_release_date.desc",
       });
+
+      console.log(
+        `🔍 Sorting movies by: ${query.sort || "primary_release_date.desc"}`
+      );
 
       // Add year filter if provided
       if (query.yearFrom && query.yearFrom !== "Any") {
@@ -140,6 +153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           queryParams.append("with_genres", categoryIds.join(","));
         }
       }
+
+      console.log(`🔍 Query params: ${queryParams.toString()}`);
 
       // Make request to TMDB API
       const tmdbResponse = await fetch(
@@ -291,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let watchHistory;
       if (req.isAuthenticated()) {
         // If authenticated, get user-specific watch history
-        const userId = req.user.id;
+        const userId = getAuthUser(req).id;
         watchHistory = await storage.getWatchHistory(userId);
       } else {
         // Otherwise get all watch history
@@ -361,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If authenticated, add userId
       if (req.isAuthenticated()) {
-        watchHistoryData.userId = req.user.id;
+        watchHistoryData.userId = getAuthUser(req).id;
       }
 
       // Validate the request data
@@ -391,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (req.isAuthenticated()) {
         // Clear only the authenticated user's history
-        await storage.clearWatchHistory(req.user.id);
+        await storage.clearWatchHistory(getAuthUser(req).id);
         res
           .status(200)
           .json({ message: "Your watch history cleared successfully" });
@@ -411,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get movie recommendations based on user's watch history
   apiRouter.get("/recommendations", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
       const limit = req.query.limit ? Number(req.query.limit) : 5;
 
       // Get recommendations
@@ -448,7 +463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user preferences
   apiRouter.get("/preferences", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
       const preferences = await storage.getUserPreferences(userId);
 
       if (!preferences) {
@@ -472,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user preferences
   apiRouter.put("/preferences", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
       const { preferences } = req.body;
 
       // Convert to string if an object is provided
@@ -500,7 +515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user playlists (authenticated user only)
   apiRouter.get("/playlists", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
       const playlists = await storage.getUserPlaylists(userId);
       res.json(playlists);
     } catch (error) {
@@ -523,7 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (
         !playlist.isPublic &&
         req.isAuthenticated() &&
-        playlist.userId !== req.user.id
+        playlist.userId !== getAuthUser(req).id
       ) {
         return res
           .status(403)
@@ -572,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new playlist
   apiRouter.post("/playlists", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
       const { name, description, isPublic } = req.body;
 
       // Create a playlist object
@@ -602,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.put("/playlists/:id", isAuthenticated, async (req, res) => {
     try {
       const playlistId = Number(req.params.id);
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
 
       // Check if playlist exists and belongs to user
       const playlist = await storage.getPlaylist(playlistId);
@@ -640,7 +655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.delete("/playlists/:id", isAuthenticated, async (req, res) => {
     try {
       const playlistId = Number(req.params.id);
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
 
       // Check if playlist exists and belongs to user
       const playlist = await storage.getPlaylist(playlistId);
@@ -668,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.post("/playlists/:id/movies", isAuthenticated, async (req, res) => {
     try {
       const playlistId = Number(req.params.id);
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
       const { movieId, notes } = req.body;
 
       if (!movieId) {
@@ -736,7 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const playlistId = Number(req.params.id);
         const movieId = Number(req.params.movieId);
-        const userId = req.user.id;
+        const userId = getAuthUser(req).id;
 
         // Check if playlist exists and belongs to user
         const playlist = await storage.getPlaylist(playlistId);
@@ -771,7 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.put("/playlists/:id/reorder", isAuthenticated, async (req, res) => {
     try {
       const playlistId = Number(req.params.id);
-      const userId = req.user.id;
+      const userId = getAuthUser(req).id;
       const { itemIds } = req.body;
 
       if (!Array.isArray(itemIds) || itemIds.length === 0) {

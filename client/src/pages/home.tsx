@@ -9,7 +9,13 @@ import MobileWatchHistory from "@/components/mobile-watch-history";
 import MovieCard from "@/components/movie-card";
 import ConfirmationModal from "@/components/confirmation-modal";
 import FilterSummary from "@/components/filter-summary";
-import { Movie, WatchedMovie, Genre, FilterState, PaginatedMoviesResponse } from "@/lib/types";
+import {
+  Movie,
+  WatchedMovie,
+  Genre,
+  FilterState,
+  PaginatedMoviesResponse,
+} from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -27,7 +33,9 @@ const Home: FC = () => {
   const isMobile = useIsMobile();
   const [showHistory, setShowHistory] = useState(!isMobile);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [sortOrder, setSortOrder] = useState<string>("rating_desc");
+  const [sortOrder, setSortOrder] = useState<string>(
+    "primary_release_date.desc"
+  );
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     minRating: 1,
@@ -43,45 +51,63 @@ const Home: FC = () => {
 
   // Fetch genres (still called "categories" in API)
   const { data: categories = [] } = useQuery<Genre[]>({
-    queryKey: ['/api/categories'],
+    queryKey: ["/api/categories"],
   });
 
   // Fetch watch history
-  const { data: watchHistory = [], isLoading: isHistoryLoading } = useQuery<WatchedMovie[]>({
-    queryKey: ['/api/watch-history'],
+  const { data: watchHistory = [], isLoading: isHistoryLoading } = useQuery<
+    WatchedMovie[]
+  >({
+    queryKey: ["/api/watch-history"],
   });
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Fetch movies with filters and pagination
-  const { data: moviesData, isLoading: isMoviesLoading } = useQuery<PaginatedMoviesResponse>({
+  const {
+    data: moviesData,
+    isLoading: isMoviesLoading,
+    refetch,
+  } = useQuery<PaginatedMoviesResponse>({
     queryKey: [
-      '/api/movies', 
+      "/api/movies",
       {
-        categories: appliedFilters.categories.length > 0 ? JSON.stringify(appliedFilters.categories) : undefined,
+        categories:
+          appliedFilters.categories.length > 0
+            ? JSON.stringify(appliedFilters.categories)
+            : undefined,
         minRating: appliedFilters.minRating,
-        yearFrom: appliedFilters.yearFrom !== "Any" ? appliedFilters.yearFrom : undefined,
-        yearTo: appliedFilters.yearTo !== "Any" ? appliedFilters.yearTo : undefined,
+        yearFrom:
+          appliedFilters.yearFrom !== "Any"
+            ? appliedFilters.yearFrom
+            : undefined,
+        yearTo:
+          appliedFilters.yearTo !== "Any" ? appliedFilters.yearTo : undefined,
         sort: sortOrder,
         page: currentPage,
         limit: 12,
-      }
+      },
     ],
   });
-  
+
+  // Refetch when sort order changes
+  useEffect(() => {
+    refetch();
+  }, [sortOrder, refetch]);
+
   // Extract movies and pagination from response or set defaults
   const movies = moviesData?.movies || [];
-  const pagination = moviesData?.pagination || { 
-    currentPage: 1, 
-    totalPages: 1, 
-    totalCount: 0, 
-    hasNextPage: false, 
-    hasPrevPage: false 
+  const pagination = moviesData?.pagination || {
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPrevPage: false,
   };
 
   const handleFilterChange = (name: keyof FilterState, value: any) => {
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleApplyFilters = () => {
@@ -90,16 +116,16 @@ const Home: FC = () => {
   };
 
   const handleRemoveFilter = (type: keyof FilterState, value?: string) => {
-    if (type === 'categories' && value) {
-      const newCategories = filters.categories.filter(c => c !== value);
-      setFilters(prev => ({ ...prev, categories: newCategories }));
-      setAppliedFilters(prev => ({ ...prev, categories: newCategories }));
-    } else if (type === 'minRating') {
-      setFilters(prev => ({ ...prev, minRating: 1 }));
-      setAppliedFilters(prev => ({ ...prev, minRating: 1 }));
-    } else if (type === 'yearFrom' || type === 'yearTo') {
-      setFilters(prev => ({ ...prev, [type]: "Any" }));
-      setAppliedFilters(prev => ({ ...prev, [type]: "Any" }));
+    if (type === "categories" && value) {
+      const newCategories = filters.categories.filter((c) => c !== value);
+      setFilters((prev) => ({ ...prev, categories: newCategories }));
+      setAppliedFilters((prev) => ({ ...prev, categories: newCategories }));
+    } else if (type === "minRating") {
+      setFilters((prev) => ({ ...prev, minRating: 1 }));
+      setAppliedFilters((prev) => ({ ...prev, minRating: 1 }));
+    } else if (type === "yearFrom" || type === "yearTo") {
+      setFilters((prev) => ({ ...prev, [type]: "Any" }));
+      setAppliedFilters((prev) => ({ ...prev, [type]: "Any" }));
     }
   };
 
@@ -125,10 +151,10 @@ const Home: FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      
+
       {/* Genre transition animation */}
       <AnimatedGenreTransition genreName={null} />
-      
+
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {isMobile && (
@@ -137,11 +163,11 @@ const Home: FC = () => {
                 onClick={() => setShowHistory(!showHistory)}
                 className="w-full flex items-center justify-center py-2 px-4 border border-primary rounded-md text-primary hover:bg-primary hover:text-white transition-colors"
               >
-                {showHistory ? 'Hide Watch History' : 'Show Watch History'}
+                {showHistory ? "Hide Watch History" : "Show Watch History"}
               </button>
             </div>
           )}
-          
+
           <div className="flex flex-col md:flex-row">
             {/* Sidebar */}
             <div className="md:w-1/4 md:pr-8 mb-6 md:mb-0">
@@ -164,7 +190,7 @@ const Home: FC = () => {
                   />
                 </div>
               </div>
-              
+
               {/* Mobile version with completely custom components */}
               <div className="md:hidden">
                 <MobileGenreFilter
@@ -175,7 +201,7 @@ const Home: FC = () => {
                   isLoading={isMoviesLoading}
                   className="mb-6"
                 />
-                
+
                 {showHistory && (
                   <MobileWatchHistory
                     watchHistory={watchHistory}
@@ -194,7 +220,9 @@ const Home: FC = () => {
                       Recommended Movies
                     </CardTitle>
                     <div className="flex items-center">
-                      <span className="mr-2 text-sm text-gray-600">Sort by:</span>
+                      <span className="mr-2 text-sm text-gray-600">
+                        Sort by:
+                      </span>
                       <Select
                         value={sortOrder}
                         onValueChange={(value) => setSortOrder(value)}
@@ -203,16 +231,53 @@ const Home: FC = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="rating_desc">Rating (High to Low)</SelectItem>
-                          <SelectItem value="year_desc">Recently Released</SelectItem>
-                          <SelectItem value="title_asc">Title (A-Z)</SelectItem>
+                          <SelectItem value="popularity.desc">
+                            Popularity (High to Low)
+                          </SelectItem>
+                          <SelectItem value="popularity.asc">
+                            Popularity (Low to High)
+                          </SelectItem>
+                          <SelectItem value="vote_average.desc">
+                            Rating (High to Low)
+                          </SelectItem>
+                          <SelectItem value="vote_average.asc">
+                            Rating (Low to High)
+                          </SelectItem>
+                          <SelectItem value="vote_count.desc">
+                            Vote Count (High to Low)
+                          </SelectItem>
+                          <SelectItem value="vote_count.asc">
+                            Vote Count (Low to High)
+                          </SelectItem>
+                          <SelectItem value="primary_release_date.desc">
+                            Release Date (Newest)
+                          </SelectItem>
+                          <SelectItem value="primary_release_date.asc">
+                            Release Date (Oldest)
+                          </SelectItem>
+                          <SelectItem value="title.asc">Title (A-Z)</SelectItem>
+                          <SelectItem value="title.desc">
+                            Title (Z-A)
+                          </SelectItem>
+                          <SelectItem value="revenue.desc">
+                            Revenue (High to Low)
+                          </SelectItem>
+                          <SelectItem value="revenue.asc">
+                            Revenue (Low to High)
+                          </SelectItem>
+                          <SelectItem value="original_title.asc">
+                            Original Title (A-Z)
+                          </SelectItem>
+                          <SelectItem value="original_title.desc">
+                            Original Title (Z-A)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <FilterSummary 
+                  <FilterSummary
                     filters={appliedFilters}
                     categories={categories}
                     onRemoveFilter={handleRemoveFilter}
@@ -241,7 +306,7 @@ const Home: FC = () => {
                         />
                       </svg>
                       <p>No movies found matching your filters.</p>
-                      <button 
+                      <button
                         onClick={handleClearAllFilters}
                         className="mt-3 text-primary hover:text-primary/80 font-medium"
                       >
@@ -254,14 +319,14 @@ const Home: FC = () => {
                         <motion.div
                           key={movie.id}
                           initial={{ opacity: 0, y: 20 }}
-                          animate={{ 
-                            opacity: 1, 
+                          animate={{
+                            opacity: 1,
                             y: 0,
-                            transition: { 
+                            transition: {
                               delay: index * 0.05, // Staggered effect
                               duration: 0.5,
-                              ease: "easeOut"
-                            }
+                              ease: "easeOut",
+                            },
                           }}
                           className="h-full" // Add height: 100% to each grid item
                         >
@@ -279,64 +344,108 @@ const Home: FC = () => {
                     <div className="mt-8 flex justify-center">
                       <nav className="flex items-center space-x-2">
                         {/* Previous page button */}
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        <button
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
+                          }
                           disabled={!pagination.hasPrevPage}
                           className={`px-3 py-2 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-50 shadow-sm ${
-                            pagination.hasPrevPage ? 'text-gray-700 cursor-pointer' : 'text-gray-400 cursor-not-allowed opacity-60'
+                            pagination.hasPrevPage
+                              ? "text-gray-700 cursor-pointer"
+                              : "text-gray-400 cursor-not-allowed opacity-60"
                           }`}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 19l-7-7 7-7"
+                            />
                           </svg>
                         </button>
-                        
+
                         {/* Generate page buttons */}
-                        {Array.from({ length: pagination.totalPages }).map((_, index) => {
-                          const pageNumber = index + 1;
-                          const isCurrentPage = pageNumber === pagination.currentPage;
-                          
-                          // Define which pages to show
-                          const showPage = 
-                            pageNumber === 1 || // First page
-                            pageNumber === pagination.totalPages || // Last page
-                            Math.abs(pageNumber - pagination.currentPage) <= 1; // Pages near current
-                            
-                          if (!showPage) {
-                            // Show ellipsis for skipped pages
-                            if (pageNumber === 2 || pageNumber === pagination.totalPages - 1) {
-                              return (
-                                <span key={`ellipsis-${pageNumber}`} className="px-3 py-2 text-sm text-gray-500">...</span>
-                              );
+                        {Array.from({ length: pagination.totalPages }).map(
+                          (_, index) => {
+                            const pageNumber = index + 1;
+                            const isCurrentPage =
+                              pageNumber === pagination.currentPage;
+
+                            // Define which pages to show
+                            const showPage =
+                              pageNumber === 1 || // First page
+                              pageNumber === pagination.totalPages || // Last page
+                              Math.abs(pageNumber - pagination.currentPage) <=
+                                1; // Pages near current
+
+                            if (!showPage) {
+                              // Show ellipsis for skipped pages
+                              if (
+                                pageNumber === 2 ||
+                                pageNumber === pagination.totalPages - 1
+                              ) {
+                                return (
+                                  <span
+                                    key={`ellipsis-${pageNumber}`}
+                                    className="px-3 py-2 text-sm text-gray-500"
+                                  >
+                                    ...
+                                  </span>
+                                );
+                              }
+                              return null; // Skip this page button
                             }
-                            return null; // Skip this page button
+
+                            return (
+                              <button
+                                key={pageNumber}
+                                onClick={() => setCurrentPage(pageNumber)}
+                                className={`px-4 py-2 rounded-md text-sm ${
+                                  isCurrentPage
+                                    ? "font-bold border-2 border-primary bg-primary text-white shadow-md"
+                                    : "font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                                }`}
+                              >
+                                {pageNumber}
+                              </button>
+                            );
                           }
-                          
-                          return (
-                            <button 
-                              key={pageNumber}
-                              onClick={() => setCurrentPage(pageNumber)}
-                              className={`px-4 py-2 rounded-md text-sm ${
-                                isCurrentPage 
-                                  ? 'font-bold border-2 border-primary bg-primary text-white shadow-md' 
-                                  : 'font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
-                              }`}
-                            >
-                              {pageNumber}
-                            </button>
-                          );
-                        })}
-                        
+                        )}
+
                         {/* Next page button */}
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.totalPages))}
+                        <button
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(prev + 1, pagination.totalPages)
+                            )
+                          }
                           disabled={!pagination.hasNextPage}
                           className={`px-3 py-2 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-50 shadow-sm ${
-                            pagination.hasNextPage ? 'text-gray-700 cursor-pointer' : 'text-gray-400 cursor-not-allowed opacity-60'
+                            pagination.hasNextPage
+                              ? "text-gray-700 cursor-pointer"
+                              : "text-gray-400 cursor-not-allowed opacity-60"
                           }`}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
                           </svg>
                         </button>
                       </nav>
