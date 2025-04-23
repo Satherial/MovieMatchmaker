@@ -1,12 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { FC, useState } from "react";
+import { FC, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Globe, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useLanguage } from "@/hooks/use-language";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define language to country code mapping for streaming services
 const languageToCountry: Record<string, string> = {
@@ -22,6 +29,26 @@ const languageToCountry: Record<string, string> = {
   zh: "cn", // Chinese -> China
   all: "us", // Default to US for "all languages"
 };
+
+// Define country options with their display names
+const countryOptions = [
+  { value: "us", label: "United States" },
+  { value: "gb", label: "United Kingdom" },
+  { value: "ca", label: "Canada" },
+  { value: "es", label: "Spain" },
+  { value: "fr", label: "France" },
+  { value: "de", label: "Germany" },
+  { value: "it", label: "Italy" },
+  { value: "jp", label: "Japan" },
+  { value: "kr", label: "South Korea" },
+  { value: "pt", label: "Portugal" },
+  { value: "ru", label: "Russia" },
+  { value: "cn", label: "China" },
+  { value: "au", label: "Australia" },
+  { value: "br", label: "Brazil" },
+  { value: "mx", label: "Mexico" },
+  { value: "in", label: "India" },
+];
 
 // Define the types for the streaming availability response
 interface StreamingOption {
@@ -49,29 +76,55 @@ interface StreamingAvailability {
 interface StreamingAvailabilityProps {
   movieId: number;
   country?: string; // Optional override
+  movieLanguage?: string; // Optional movie language for default country
 }
 
 export const StreamingAvailability: FC<StreamingAvailabilityProps> = ({
   movieId,
   country, // Optional override
+  movieLanguage, // Optional movie language
 }) => {
   // Get user's language preference
   const { language } = useLanguage();
 
-  // Derive country from language, but allow override via props
-  const derivedCountry = country || languageToCountry[language] || "us";
+  // Get initial country either from props, or derived from movie language, user language, or default to US
+  const getInitialCountry = () => {
+    if (country) return country;
+    if (movieLanguage && languageToCountry[movieLanguage])
+      return languageToCountry[movieLanguage];
+    return languageToCountry[language] || "us";
+  };
 
-  // Use the derived country code for API requests
+  // State for selected country
+  const [selectedCountry, setSelectedCountry] = useState<string>(
+    getInitialCountry()
+  );
+
+  // Add state to track when we're manually changing countries
+  const [isChangingCountry, setIsChangingCountry] = useState(false);
+
+  // Update country when movie language changes
+  useEffect(() => {
+    // This ensures the streaming availability is shown for the movie's native country
+    // by default, improving the chance of finding relevant streaming options
+    if (movieLanguage && languageToCountry[movieLanguage]) {
+      setSelectedCountry(languageToCountry[movieLanguage]);
+    }
+  }, [movieLanguage]);
+
+  // Use the selected country code for API requests
   const {
     data: streamingData,
     isLoading,
     isError,
     error,
+    refetch,
+    isFetching,
   } = useQuery<StreamingAvailability>({
-    queryKey: [`streaming-${movieId}`, { country: derivedCountry }],
+    queryKey: [`streaming-${movieId}`, { country: selectedCountry }],
     queryFn: async () => {
       const response = await fetch(
-        `/api/streaming/${movieId}?country=${derivedCountry}`
+        `/api/streaming/${movieId}?country=${selectedCountry}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch streaming data");
@@ -79,10 +132,10 @@ export const StreamingAvailability: FC<StreamingAvailabilityProps> = ({
       const data = await response.json();
       // Add debug logging for the structure
       console.log("Raw streaming data structure:", data);
-      if (data.streamingOptions && data.streamingOptions[derivedCountry]) {
+      if (data.streamingOptions && data.streamingOptions[selectedCountry]) {
         console.log(
           "Service types:",
-          data.streamingOptions[derivedCountry].map(
+          data.streamingOptions[selectedCountry].map(
             (opt: any) => `${opt.service} (${typeof opt.service})`
           )
         );
@@ -91,6 +144,21 @@ export const StreamingAvailability: FC<StreamingAvailabilityProps> = ({
     },
     enabled: !!movieId,
   });
+
+  // Handle country change
+  const handleCountryChange = (value: string) => {
+    setIsChangingCountry(true);
+    setSelectedCountry(value);
+  };
+
+  // Refetch data when country changes
+  useEffect(() => {
+    if (movieId) {
+      refetch().finally(() => {
+        setIsChangingCountry(false);
+      });
+    }
+  }, [selectedCountry, refetch, movieId]);
 
   // Helper function to get platform logo or name
   const getPlatformIcon = (platform: string | any) => {
@@ -162,6 +230,13 @@ export const StreamingAvailability: FC<StreamingAvailabilityProps> = ({
     return types[type.toLowerCase()] || "bg-gray-100 text-gray-800";
   };
 
+  // Find the country label for display
+  const getCountryLabel = (code: string) => {
+    const country = countryOptions.find((c) => c.value === code);
+    return country ? country.label : code.toUpperCase();
+  };
+
+  // Consider both isLoading and isChangingCountry for displaying loading state
   if (isLoading) {
     return (
       <div className="my-6">
@@ -201,19 +276,52 @@ export const StreamingAvailability: FC<StreamingAvailabilityProps> = ({
   if (
     !streamingData?.streamingOptions ||
     typeof streamingData.streamingOptions !== "object" ||
-    !streamingData.streamingOptions[derivedCountry] ||
-    !Array.isArray(streamingData.streamingOptions[derivedCountry]) ||
-    streamingData.streamingOptions[derivedCountry].length === 0
+    !streamingData.streamingOptions[selectedCountry] ||
+    !Array.isArray(streamingData.streamingOptions[selectedCountry]) ||
+    streamingData.streamingOptions[selectedCountry].length === 0
   ) {
     return (
       <div className="my-6">
         <h2 className="text-xl font-semibold mb-3">Where to Watch</h2>
-        <Card className="p-6 text-center">
-          <p className="text-muted-foreground">
-            No streaming options available for this movie in{" "}
-            {derivedCountry.toUpperCase()}.
-          </p>
-        </Card>
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Globe className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Country:</span>
+          </div>
+          <Select
+            value={selectedCountry}
+            onValueChange={handleCountryChange}
+            disabled={isChangingCountry || isFetching}
+          >
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="Select country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countryOptions.map((country) => (
+                <SelectItem key={country.value} value={country.value}>
+                  {country.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {isChangingCountry || isFetching ? (
+          <Card className="p-6">
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+              <p className="text-muted-foreground">
+                Loading streaming options...
+              </p>
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-6 text-center">
+            <p className="text-muted-foreground">
+              No streaming options available for this movie in{" "}
+              {getCountryLabel(selectedCountry)}.
+            </p>
+          </Card>
+        )}
       </div>
     );
   }
@@ -221,107 +329,141 @@ export const StreamingAvailability: FC<StreamingAvailabilityProps> = ({
   return (
     <div className="my-6">
       <h2 className="text-xl font-semibold mb-3">Where to Watch</h2>
-      <Card className="p-6">
-        <div className="space-y-4">
-          {(() => {
-            try {
-              // Log full details of streaming options for debugging
-              console.log(
-                `Rendering streaming options for country: ${derivedCountry}`
-              );
-              console.log(
-                "All available streaming options:",
-                streamingData?.streamingOptions
-              );
-
-              return streamingData.streamingOptions[derivedCountry].map(
-                (option, index) => {
-                  // Log each option for debugging
-                  console.log(`Option ${index}:`, option);
-
-                  return (
-                    <div
-                      key={index}
-                      className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center mb-2 sm:mb-0">
-                        {getPlatformIcon(option.service)}
-                        <span className="font-medium">
-                          {typeof option.service === "string"
-                            ? option.service
-                            : typeof option.service === "object" &&
-                              option.service
-                            ? (option.service as any).name ||
-                              JSON.stringify(option.service)
-                            : "Unknown Service"}
-                        </span>
-                        {option.streamingType && (
-                          <Badge
-                            className={`ml-2 ${getStreamingTypeBadge(
-                              option.streamingType
-                            )}`}
-                            variant="outline"
-                          >
-                            {typeof option.streamingType === "string"
-                              ? option.streamingType
-                              : "Unknown"}
-                          </Badge>
-                        )}
-                        {option.quality && (
-                          <Badge className="ml-2" variant="outline">
-                            {typeof option.quality === "string"
-                              ? option.quality
-                              : "HD"}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                        {option.price && (
-                          <span className="text-sm font-medium">
-                            {typeof option.price === "object" &&
-                            option.price.formatted
-                              ? option.price.formatted
-                              : typeof option.price === "string"
-                              ? option.price
-                              : ""}
-                          </span>
-                        )}
-                        <Button
-                          size="sm"
-                          className="ml-auto sm:ml-0"
-                          variant="outline"
-                          asChild
-                        >
-                          <a
-                            href={
-                              typeof option.link === "string"
-                                ? option.link
-                                : "#"
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Watch <ExternalLink className="ml-1 h-4 w-4" />
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                }
-              );
-            } catch (error) {
-              console.error("Error rendering streaming options:", error);
-              return (
-                <div className="p-4 border border-red-200 rounded-md bg-red-50">
-                  <p className="text-red-500">
-                    Error displaying streaming options. Please try again later.
-                  </p>
-                </div>
-              );
-            }
-          })()}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Globe className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Country:</span>
         </div>
-      </Card>
+        <Select
+          value={selectedCountry}
+          onValueChange={handleCountryChange}
+          disabled={isChangingCountry || isFetching}
+        >
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="Select country" />
+          </SelectTrigger>
+          <SelectContent>
+            {countryOptions.map((country) => (
+              <SelectItem key={country.value} value={country.value}>
+                {country.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {isChangingCountry || isFetching ? (
+        <Card className="p-6">
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">
+              Loading streaming options...
+            </p>
+          </div>
+        </Card>
+      ) : (
+        <Card className="p-6">
+          <div className="space-y-4">
+            {(() => {
+              try {
+                // Log full details of streaming options for debugging
+                console.log(
+                  `Rendering streaming options for country: ${selectedCountry}`
+                );
+                console.log(
+                  "All available streaming options:",
+                  streamingData?.streamingOptions
+                );
+
+                return streamingData.streamingOptions[selectedCountry].map(
+                  (option, index) => {
+                    // Log each option for debugging
+                    console.log(`Option ${index}:`, option);
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center mb-2 sm:mb-0">
+                          {getPlatformIcon(option.service)}
+                          <span className="font-medium">
+                            {typeof option.service === "string"
+                              ? option.service
+                              : typeof option.service === "object" &&
+                                option.service
+                              ? (option.service as any).name ||
+                                JSON.stringify(option.service)
+                              : "Unknown Service"}
+                          </span>
+                          {option.streamingType && (
+                            <Badge
+                              className={`ml-2 ${getStreamingTypeBadge(
+                                option.streamingType
+                              )}`}
+                              variant="outline"
+                            >
+                              {typeof option.streamingType === "string"
+                                ? option.streamingType
+                                : "Unknown"}
+                            </Badge>
+                          )}
+                          {option.quality && (
+                            <Badge className="ml-2" variant="outline">
+                              {typeof option.quality === "string"
+                                ? option.quality
+                                : "HD"}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                          {option.price && (
+                            <span className="text-sm font-medium">
+                              {typeof option.price === "object" &&
+                              option.price.formatted
+                                ? option.price.formatted
+                                : typeof option.price === "string"
+                                ? option.price
+                                : ""}
+                            </span>
+                          )}
+                          <Button
+                            size="sm"
+                            className="ml-auto sm:ml-0"
+                            variant="outline"
+                            asChild
+                          >
+                            <a
+                              href={
+                                typeof option.link === "string"
+                                  ? option.link
+                                  : "#"
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Watch <ExternalLink className="ml-1 h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+                );
+              } catch (error) {
+                console.error("Error rendering streaming options:", error);
+                return (
+                  <div className="p-4 border border-red-200 rounded-md bg-red-50">
+                    <p className="text-red-500">
+                      Error displaying streaming options. Please try again
+                      later.
+                    </p>
+                  </div>
+                );
+              }
+            })()}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

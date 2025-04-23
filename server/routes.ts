@@ -1023,7 +1023,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/streaming/:id", async (req, res) => {
     try {
       const movieId = req.params.id;
-      const country = (req.query.country as string) || "us"; // Default to US if not specified
+      // Get country parameter with validation
+      const country = req.query.country
+        ? String(req.query.country).toLowerCase()
+        : "us";
+
+      // Validate the country code format (should be 2 letters)
+      if (!/^[a-z]{2}$/.test(country)) {
+        return res.status(400).json({
+          error:
+            "Invalid country code format. Please use a two-letter country code (e.g., us, gb, fr).",
+        });
+      }
 
       if (!movieId) {
         return res.status(400).json({ error: "Movie ID is required" });

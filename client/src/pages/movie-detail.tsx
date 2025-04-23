@@ -212,7 +212,10 @@ const MovieDetail: FC = () => {
             <MovieTrailer movieId={movie.id} />
 
             {/* Streaming Availability Section */}
-            <StreamingAvailability movieId={movie.id} />
+            <StreamingAvailability
+              movieId={movie.id}
+              movieLanguage={movie.language}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
               {movie.director && (
