@@ -14,6 +14,25 @@ import { Loader2 } from "lucide-react";
 import { useGenreTransition } from "@/contexts/genre-transition-context";
 import { motion } from "framer-motion";
 
+// Country options with name and ISO code
+const countryOptions = [
+  { code: "Any", name: "Any Country" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "FR", name: "France" },
+  { code: "IT", name: "Italy" },
+  { code: "DE", name: "Germany" },
+  { code: "ES", name: "Spain" },
+  { code: "CA", name: "Canada" },
+  { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" },
+  { code: "IN", name: "India" },
+  { code: "CN", name: "China" },
+  { code: "AU", name: "Australia" },
+  { code: "MX", name: "Mexico" },
+  { code: "BR", name: "Brazil" },
+];
+
 interface GenreFilterProps {
   categories: Genre[];
   filters: FilterState;
@@ -177,6 +196,28 @@ const GenreFilter: FC<GenreFilterProps> = ({
               </Select>
             </div>
           </div>
+        </div>
+
+        {/* Country of Origin */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">
+            Country of Origin
+          </h3>
+          <Select
+            value={filters.country}
+            onValueChange={(value) => onFilterChange("country", value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Any Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countryOptions.map((country) => (
+                <SelectItem key={country.code} value={country.code}>
+                  {country.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

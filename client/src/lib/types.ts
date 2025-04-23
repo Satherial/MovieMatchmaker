@@ -51,6 +51,7 @@ export interface FilterState {
   yearFrom: string;
   yearTo: string;
   language: string;
+  country: string;
 }
 
 export interface PaginationMetadata {

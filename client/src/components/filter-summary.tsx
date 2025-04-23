@@ -4,6 +4,24 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { languageNames, useLanguage } from "@/hooks/use-language";
 
+// Map of country codes to names for display in filter summary
+const countryNames: Record<string, string> = {
+  US: "United States",
+  GB: "United Kingdom",
+  FR: "France",
+  IT: "Italy",
+  DE: "Germany",
+  ES: "Spain",
+  CA: "Canada",
+  JP: "Japan",
+  KR: "South Korea",
+  IN: "India",
+  CN: "China",
+  AU: "Australia",
+  MX: "Mexico",
+  BR: "Brazil",
+};
+
 interface FilterSummaryProps {
   filters: FilterState;
   categories: { id: string; name: string }[]; // Keeping prop name for compatibility
@@ -23,7 +41,8 @@ const FilterSummary: FC<FilterSummaryProps> = ({
     filters.categories.length > 0 ||
     filters.minRating > 1 ||
     filters.yearFrom !== "Any" ||
-    filters.yearTo !== "Any";
+    filters.yearTo !== "Any" ||
+    filters.country !== "Any";
 
   if (!hasActiveFilters) return null;
 
@@ -76,6 +95,19 @@ const FilterSummary: FC<FilterSummaryProps> = ({
               onRemoveFilter("yearFrom");
               onRemoveFilter("yearTo");
             }}
+          >
+            <X size={14} />
+          </button>
+        </span>
+      )}
+
+      {/* Country filter */}
+      {filters.country !== "Any" && (
+        <span className="bg-primary-100 text-primary-800 text-xs px-3 py-1 rounded-full flex items-center">
+          Country: {countryNames[filters.country] || filters.country}
+          <button
+            className="ml-1 text-primary-600"
+            onClick={() => onRemoveFilter("country")}
           >
             <X size={14} />
           </button>

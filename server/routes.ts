@@ -131,6 +131,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         queryParams.set("language", "en-US");
       }
 
+      // Add country of origin filter if provided
+      if (query.country && query.country !== "Any") {
+        // Filter movies by origin country
+        queryParams.append("with_origin_country", query.country as string);
+        console.log(`🌍 Country filter applied: ${query.country}`);
+      }
+
       // Add year filter if provided
       if (query.yearFrom && query.yearFrom !== "Any") {
         queryParams.append(

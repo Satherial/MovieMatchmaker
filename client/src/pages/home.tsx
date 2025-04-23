@@ -45,6 +45,7 @@ const Home: FC = () => {
     yearFrom: "Any",
     yearTo: "Any",
     language: language, // Initialize with the language from our hook
+    country: "Any", // Initialize country with "Any"
   });
   const [appliedFilters, setAppliedFilters] = useState<FilterState>(filters);
 
@@ -106,6 +107,8 @@ const Home: FC = () => {
           appliedFilters.language !== "all"
             ? appliedFilters.language
             : undefined,
+        country:
+          appliedFilters.country !== "Any" ? appliedFilters.country : undefined,
         sort: sortOrder,
         page: currentPage,
         limit: 12,
@@ -155,16 +158,21 @@ const Home: FC = () => {
       // Also update the language selector state
       setPreferredLanguage(browserLanguage);
       setSelectedLanguage(browserLanguage);
+    } else if (type === "country") {
+      // Reset country to "Any"
+      setFilters((prev) => ({ ...prev, country: "Any" }));
+      setAppliedFilters((prev) => ({ ...prev, country: "Any" }));
     }
   };
 
   const handleClearAllFilters = () => {
-    const resetFilters = {
+    const resetFilters: FilterState = {
       categories: [],
       minRating: 1,
       yearFrom: "Any",
       yearTo: "Any",
       language: browserLanguage, // Reset to browser's default language instead of "all"
+      country: "Any", // Reset country to "Any"
     };
     setFilters(resetFilters);
     setAppliedFilters(resetFilters);

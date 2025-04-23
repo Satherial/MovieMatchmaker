@@ -6,6 +6,25 @@ import { motion } from "framer-motion";
 import { useGenreTransition } from "@/contexts/genre-transition-context";
 import { languageNames } from "@/hooks/use-language";
 
+// Country options with name and ISO code
+const countryOptions = [
+  { code: "Any", name: "Any Country" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "FR", name: "France" },
+  { code: "IT", name: "Italy" },
+  { code: "DE", name: "Germany" },
+  { code: "ES", name: "Spain" },
+  { code: "CA", name: "Canada" },
+  { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" },
+  { code: "IN", name: "India" },
+  { code: "CN", name: "China" },
+  { code: "AU", name: "Australia" },
+  { code: "MX", name: "Mexico" },
+  { code: "BR", name: "Brazil" },
+];
+
 interface MobileGenreFilterProps {
   categories: Genre[];
   filters: FilterState;
@@ -79,10 +98,12 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     onFilterChange("language", value);
+  };
 
-    // Optionally, apply filters immediately when language changes
-    // Uncomment the next line if you want to apply filters immediately
-    // onApplyFilters();
+  // Add country change handler
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    onFilterChange("country", value);
   };
 
   return (
@@ -170,6 +191,24 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
             {Object.entries(languageNames).map(([code, name]) => (
               <option key={code} value={code}>
                 {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Country of Origin */}
+        <div className="mb-6" style={{ backgroundColor: "#ffffff" }}>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">
+            Country of Origin
+          </h3>
+          <select
+            value={filters.country}
+            onChange={handleCountryChange}
+            className="w-full p-2 border border-gray-300 rounded-md bg-white"
+          >
+            {countryOptions.map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.name}
               </option>
             ))}
           </select>
