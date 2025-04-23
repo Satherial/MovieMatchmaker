@@ -363,6 +363,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   imageUrl: tmdbResponse.poster_path
                     ? `${TMDB_IMAGE_BASE_URL}${tmdbResponse.poster_path}`
                     : "",
+                  language: tmdbResponse.original_language || null,
+                  director: null,
+                  actors: null,
+                  duration: tmdbResponse.runtime || null,
+                  country: null,
+                  releaseDate: tmdbResponse.release_date || null,
                 };
               }
             }
@@ -767,39 +773,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ error: "You don't have permission to add to this playlist" });
       }
 
-      // Check if movie exists
-      const movie = await storage.getMovie(Number(movieId));
-      if (!movie) {
-        return res.status(404).json({ error: "Movie not found" });
+      // Fetch movie details from TMDB API first
+      const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+      const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+      let movieData = null;
+
+      const tmdbResponse = await fetch(`${TMDB_BASE_URL}/movie/${movieId}`, {
+        headers: {
+          Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!tmdbResponse.ok) {
+        return res
+          .status(404)
+          .json({ error: "Movie not found in TMDB database" });
       }
 
-      // Add the movie to the playlist
-      const playlistItemData = {
-        playlistId,
-        movieId: Number(movieId),
-        notes: notes || null,
-        sortOrder: 0, // The storage function will determine the proper sort order
+      const tmdbData = await tmdbResponse.json();
+      movieData = {
+        id: tmdbData.id,
+        title: tmdbData.title,
+        description: tmdbData.overview || "",
+        year: new Date(tmdbData.release_date || Date.now()).getFullYear(),
+        rating: tmdbData.vote_average || 0,
+        imageUrl: tmdbData.poster_path
+          ? `${TMDB_IMAGE_BASE_URL}${tmdbData.poster_path}`
+          : "",
+        director: null,
+        actors: null,
+        duration: tmdbData.runtime || null,
+        country: null,
+        language: tmdbData.original_language || null,
+        releaseDate: tmdbData.release_date || null,
+        categories: tmdbData.genres?.map((g: any) => g.name) || [],
       };
 
-      // Validate the data
-      const validation = insertPlaylistItemSchema.safeParse(playlistItemData);
-      if (!validation.success) {
-        return res.status(400).json({ error: validation.error.errors });
+      // Save the movie to our local database if it doesn't already exist
+      let existingMovie = await storage.getMovie(Number(movieId));
+      let savedMovieId = Number(movieId);
+
+      if (!existingMovie) {
+        try {
+          // Create an InsertMovie object from movieData
+          const movieToSave = {
+            title: movieData.title,
+            description: movieData.description,
+            year: movieData.year,
+            rating: movieData.rating,
+            imageUrl: movieData.imageUrl,
+            director: movieData.director,
+            actors: movieData.actors,
+            duration: movieData.duration,
+            country: movieData.country,
+            language: movieData.language,
+            releaseDate: movieData.releaseDate,
+          };
+          // Save the movie to our database
+          const savedMovie = await storage.createMovie(movieToSave);
+          savedMovieId = savedMovie.id; // Use the database-generated ID
+          console.log(
+            `Movie ${movieId} saved to database with ID ${savedMovieId}`
+          );
+        } catch (error) {
+          console.error(`Failed to save movie ${movieId} to database:`, error);
+          return res
+            .status(500)
+            .json({ error: "Failed to save movie to database" });
+        }
+      } else {
+        savedMovieId = existingMovie.id;
       }
 
-      // Add the movie to playlist
+      // Check if the movie is already in the playlist
+      const playlistItems = await storage.getPlaylistItems(playlistId);
+      const exists = playlistItems.some(
+        (item) => item.movieId === savedMovieId
+      );
+
+      if (exists) {
+        return res
+          .status(409)
+          .json({ error: "Movie already exists in this playlist" });
+      }
+
+      // Add movie to playlist
       try {
-        const playlistItem = await storage.addMovieToPlaylist(validation.data);
-        // Return the item with the movie details
-        res.status(201).json({
-          ...playlistItem,
-          movie,
+        const sortOrder = playlistItems.length + 1;
+        await storage.addMovieToPlaylist({
+          playlistId,
+          movieId: savedMovieId,
+          notes: notes || undefined,
+          sortOrder,
         });
-      } catch (error: any) {
-        if (error.message === "Movie already exists in this playlist") {
-          return res.status(409).json({ error: error.message });
-        }
-        throw error;
+
+        res.status(201).json({
+          success: true,
+          message: "Movie added to playlist",
+          data: {
+            playlistId,
+            movieId: savedMovieId,
+          },
+        });
+      } catch (error) {
+        console.error("Error adding movie to playlist", playlistId, error);
+        res.status(500).json({ error: "Failed to add movie to playlist" });
       }
     } catch (error) {
       console.error(`Error adding movie to playlist ${req.params.id}:`, error);
