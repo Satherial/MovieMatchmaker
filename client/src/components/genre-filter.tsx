@@ -39,6 +39,7 @@ interface GenreFilterProps {
   onFilterChange: (name: keyof FilterState, value: any) => void;
   onApplyFilters: () => void;
   isLoading?: boolean;
+  isLoadingGenres?: boolean;
   className?: string;
 }
 
@@ -48,6 +49,7 @@ const GenreFilter: FC<GenreFilterProps> = ({
   onFilterChange,
   onApplyFilters,
   isLoading = false,
+  isLoadingGenres = false,
   className = "",
 }) => {
   const { setGenreTransition } = useGenreTransition();
@@ -104,34 +106,41 @@ const GenreFilter: FC<GenreFilterProps> = ({
         {/* Genres */}
         <div>
           <h3 className="text-sm font-medium text-gray-700 mb-2">Genres</h3>
-          <div className="flex flex-wrap gap-2">
-            {genres.map((genre) => (
-              <motion.button
-                key={genre.id}
-                className={`genre-chip px-3 py-1 text-sm rounded-full transition-colors ${
-                  filters.categories.includes(genre.id)
-                    ? `bg-primary text-primary-foreground active-${genre.name
-                        .toLowerCase()
-                        .replace(/\s+/g, "-")}`
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                }`}
-                onClick={() => handleGenreToggle(genre.id)}
-                whileHover={{
-                  scale: 1.05,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                }}
-                whileTap={{ scale: 0.95 }}
-                animate={{
-                  scale: filters.categories.includes(genre.id)
-                    ? [1, 1.1, 1]
-                    : 1,
-                  transition: { duration: 0.3 },
-                }}
-              >
-                {genre.name}
-              </motion.button>
-            ))}
-          </div>
+          {isLoadingGenres ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+              <span className="text-sm text-gray-600">Loading genres...</span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {genres.map((genre) => (
+                <motion.button
+                  key={genre.id}
+                  className={`genre-chip px-3 py-1 text-sm rounded-full transition-colors ${
+                    filters.categories.includes(genre.id)
+                      ? `bg-primary text-primary-foreground active-${genre.name
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                  }`}
+                  onClick={() => handleGenreToggle(genre.id)}
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={{
+                    scale: filters.categories.includes(genre.id)
+                      ? [1, 1.1, 1]
+                      : 1,
+                    transition: { duration: 0.3 },
+                  }}
+                >
+                  {genre.name}
+                </motion.button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Minimum Rating */}

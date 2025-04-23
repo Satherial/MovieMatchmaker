@@ -69,7 +69,9 @@ const Home: FC = () => {
   }, [language]);
 
   // Fetch genres (still called "categories" in API)
-  const { data: categories = [] } = useQuery<Genre[]>({
+  const { data: categories = [], isLoading: isLoadingGenres } = useQuery<
+    Genre[]
+  >({
     queryKey: ["/api/categories"],
   });
 
@@ -229,6 +231,7 @@ const Home: FC = () => {
                     onFilterChange={handleFilterChange}
                     onApplyFilters={handleApplyFilters}
                     isLoading={isMoviesLoading}
+                    isLoadingGenres={isLoadingGenres}
                     className="mb-6"
                   />
 
@@ -248,6 +251,7 @@ const Home: FC = () => {
                   onFilterChange={handleFilterChange}
                   onApplyFilters={handleApplyFilters}
                   isLoading={isMoviesLoading}
+                  isLoadingGenres={isLoadingGenres}
                   className="mb-6"
                 />
 
