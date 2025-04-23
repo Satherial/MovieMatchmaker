@@ -18,6 +18,7 @@ import { AddToPlaylist } from "@/components/add-to-playlist";
 import SharedWatchModal from "@/components/shared-watch-modal";
 import MovieTrailer from "@/components/movie-trailer";
 import { useAuth } from "@/hooks/use-auth";
+import StreamingAvailability from "@/components/streaming-availability";
 
 const MovieDetail: FC = () => {
   const [match, params] = useRoute("/movies/:id");
@@ -209,6 +210,9 @@ const MovieDetail: FC = () => {
 
             {/* Movie Trailer Section */}
             <MovieTrailer movieId={movie.id} />
+
+            {/* Streaming Availability Section */}
+            <StreamingAvailability movieId={movie.id} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
               {movie.director && (

@@ -13,12 +13,13 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { setupMCPRoutes } from "./mcp/routes";
+import { trailerRouter } from "./api/trailer";
+import * as streamingAvailability from "streaming-availability";
 
 // Import our new API routers
 import friendsRouter from "./api/friends";
 import playlistSharesRouter from "./api/playlist-shares";
 import sharedWatchesRouter from "./api/shared-watches";
-import { trailerRouter } from "./api/trailer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
@@ -846,6 +847,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add the trailer endpoint
   app.use("/api/trailer", trailerRouter);
+
+  // Add streaming availability endpoint
+  apiRouter.get("/streaming/:id", async (req, res) => {
+    try {
+      const movieId = req.params.id;
+      const country = (req.query.country as string) || "us"; // Default to US if not specified
+
+      if (!movieId) {
+        return res.status(400).json({ error: "Movie ID is required" });
+      }
+
+      // Check if we have a RAPID_API_KEY
+      if (!process.env.RAPID_API_KEY) {
+        return res
+          .status(500)
+          .json({ error: "RAPID_API_KEY is not configured" });
+      }
+
+      // Initialize the streaming availability client
+      const client = new streamingAvailability.Client(
+        new streamingAvailability.Configuration({
+          apiKey: process.env.RAPID_API_KEY,
+        })
+      );
+
+      // Format the ID for the Streaming Availability API
+      // For TMDB movie IDs, use the "movie/{id}" format
+      const formattedId = `movie/${movieId}`;
+
+      // Fetch streaming info
+      const streamingInfo = await client.showsApi.getShow({
+        id: formattedId,
+        country: country,
+      });
+
+      res.json(streamingInfo);
+    } catch (error) {
+      console.error("Error fetching streaming availability:", error);
+      res.status(500).json({
+        error: "Failed to fetch streaming availability",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
 
   // Set up MCP routes for LLM interaction
   // Register MCP routes under /api/mcp

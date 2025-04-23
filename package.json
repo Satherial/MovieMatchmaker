@@ -79,6 +79,7 @@
     "react-resizable-panels": "^2.1.7",
     "react-youtube": "^10.1.0",
     "recharts": "^2.15.2",
+    "streaming-availability": "^4.4.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.2.5",
