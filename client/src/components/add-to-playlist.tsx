@@ -1,32 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Plus, 
-  PlusCircle, 
-  Check, 
-  ChevronDown, 
-  Globe, 
-  Lock 
+import {
+  Plus,
+  PlusCircle,
+  Check,
+  ChevronDown,
+  Globe,
+  Lock,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -58,28 +59,61 @@ interface AddToPlaylistProps {
   className?: string;
 }
 
-export function AddToPlaylist({ movie, variant = "default", className = "" }: AddToPlaylistProps) {
+export function AddToPlaylist({
+  movie,
+  variant = "default",
+  className = "",
+}: AddToPlaylistProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(
+    null
+  );
   const [notes, setNotes] = useState("");
   const [showAddNotes, setShowAddNotes] = useState(false);
+  const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(false);
 
   // Fetch user playlists
-  const { data: playlists, isLoading } = useQuery({
+  const { data: playlists, isLoading } = useQuery<Playlist[]>({
     queryKey: ["/api/playlists"],
     enabled: !!user && isDialogOpen,
   });
 
+  // Set loading state when dialog opens
+  useEffect(() => {
+    if (isDialogOpen) {
+      setIsLoadingPlaylists(true);
+    }
+  }, [isDialogOpen]);
+
+  // Update loading state when query completes
+  useEffect(() => {
+    if (!isLoading && isDialogOpen) {
+      setIsLoadingPlaylists(false);
+    }
+  }, [isLoading, isDialogOpen]);
+
   // Add to playlist mutation
   const addToPlaylistMutation = useMutation({
-    mutationFn: async ({ playlistId, movieId, notes }: { playlistId: number; movieId: number; notes?: string }) => {
-      const res = await apiRequest("POST", `/api/playlists/${playlistId}/movies`, {
-        movieId,
-        notes: notes || undefined
-      });
+    mutationFn: async ({
+      playlistId,
+      movieId,
+      notes,
+    }: {
+      playlistId: number;
+      movieId: number;
+      notes?: string;
+    }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/playlists/${playlistId}/movies`,
+        {
+          movieId,
+          notes: notes || undefined,
+        }
+      );
       return res.json();
     },
     onSuccess: (data, variables) => {
@@ -87,10 +121,12 @@ export function AddToPlaylist({ movie, variant = "default", className = "" }: Ad
         title: "Added to playlist",
         description: `"${movie.title}" has been added to your playlist.`,
       });
-      
+
       // Invalidate the playlist cache to update UI
-      queryClient.invalidateQueries({ queryKey: [`/api/playlists/${variables.playlistId}`] });
-      
+      queryClient.invalidateQueries({
+        queryKey: [`/api/playlists/${variables.playlistId}`],
+      });
+
       // Reset state and close dialog
       setSelectedPlaylist(null);
       setNotes("");
@@ -124,21 +160,21 @@ export function AddToPlaylist({ movie, variant = "default", className = "" }: Ad
   // Submit the add to playlist request
   const handleSubmit = () => {
     if (!selectedPlaylist) return;
-    
+
     addToPlaylistMutation.mutate({
       playlistId: selectedPlaylist.id,
       movieId: movie.id,
-      notes: notes.trim() || undefined
+      notes: notes.trim() || undefined,
     });
   };
 
   // Skip notes and add directly
   const skipAndAdd = () => {
     if (!selectedPlaylist) return;
-    
+
     addToPlaylistMutation.mutate({
       playlistId: selectedPlaylist.id,
-      movieId: movie.id
+      movieId: movie.id,
     });
   };
 
@@ -172,8 +208,12 @@ export function AddToPlaylist({ movie, variant = "default", className = "" }: Ad
         {showAddNotes && selectedPlaylist ? (
           <div className="py-4">
             <div className="mb-4">
-              <h4 className="font-medium mb-1">Adding to: {selectedPlaylist.name}</h4>
-              <p className="text-sm text-muted-foreground">Add optional notes about this movie in your playlist.</p>
+              <h4 className="font-medium mb-1">
+                Adding to: {selectedPlaylist.name}
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Add optional notes about this movie in your playlist.
+              </p>
             </div>
             <Textarea
               value={notes}
@@ -186,21 +226,32 @@ export function AddToPlaylist({ movie, variant = "default", className = "" }: Ad
               <Button variant="outline" onClick={() => setShowAddNotes(false)}>
                 Back
               </Button>
-              <Button onClick={handleSubmit} disabled={addToPlaylistMutation.isPending}>
-                {addToPlaylistMutation.isPending ? "Adding..." : "Add Movie"}
+              <Button
+                onClick={handleSubmit}
+                disabled={addToPlaylistMutation.isPending}
+              >
+                {addToPlaylistMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  "Add Movie"
+                )}
               </Button>
             </div>
+          </div>
+        ) : isLoadingPlaylists ? (
+          <div className="py-8 flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">
+              Loading your playlists...
+            </p>
           </div>
         ) : (
           <>
             <div className="py-4">
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : playlists && playlists.length > 0 ? (
+              {playlists && playlists.length > 0 ? (
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                   {playlists.map((playlist: Playlist) => (
                     <div
@@ -211,12 +262,18 @@ export function AddToPlaylist({ movie, variant = "default", className = "" }: Ad
                       <div className="flex items-center gap-2">
                         <div className="font-medium">{playlist.name}</div>
                         {playlist.isPublic ? (
-                          <Badge variant="outline" className="text-xs text-green-600">
+                          <Badge
+                            variant="outline"
+                            className="text-xs text-green-600"
+                          >
                             <Globe className="h-3 w-3 mr-1" />
                             Public
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-xs text-amber-600">
+                          <Badge
+                            variant="outline"
+                            className="text-xs text-amber-600"
+                          >
                             <Lock className="h-3 w-3 mr-1" />
                             Private
                           </Badge>
@@ -230,7 +287,9 @@ export function AddToPlaylist({ movie, variant = "default", className = "" }: Ad
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-muted-foreground mb-4">You don't have any playlists yet.</p>
+                  <p className="text-muted-foreground mb-4">
+                    You don't have any playlists yet.
+                  </p>
                 </div>
               )}
             </div>
@@ -244,28 +303,41 @@ export function AddToPlaylist({ movie, variant = "default", className = "" }: Ad
                   Create New Playlist
                 </Link>
               </Button>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" disabled={!playlists || playlists.length === 0}>
-                    Quick Add <ChevronDown className="ml-2 h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    disabled={!playlists || playlists.length === 0}
+                  >
+                    {isLoadingPlaylists ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        Quick Add <ChevronDown className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {playlists && playlists.slice(0, 5).map((playlist: Playlist) => (
-                    <DropdownMenuItem 
-                      key={playlist.id}
-                      onClick={() => {
-                        setSelectedPlaylist(playlist);
-                        skipAndAdd();
-                      }}
-                    >
-                      <div className="flex items-center">
-                        {playlist.name}
-                        <Check className="ml-2 h-4 w-4 opacity-0 group-data-[highlighted]:opacity-100" />
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
+                  {playlists &&
+                    playlists.slice(0, 5).map((playlist: Playlist) => (
+                      <DropdownMenuItem
+                        key={playlist.id}
+                        onClick={() => {
+                          setSelectedPlaylist(playlist);
+                          skipAndAdd();
+                        }}
+                      >
+                        <div className="flex items-center">
+                          {playlist.name}
+                          <Check className="ml-2 h-4 w-4 opacity-0 group-data-[highlighted]:opacity-100" />
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
