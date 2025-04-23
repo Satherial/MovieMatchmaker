@@ -31,6 +31,7 @@ import {
   Pencil,
   Clock,
   Star,
+  Loader2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -249,12 +250,17 @@ export default function PlaylistDetailPage() {
     items.splice(result.destination.index, 0, reorderedItem);
 
     // Extract playlist item IDs in the new order
-    const newOrder = items
-      .map((item) => item.playlistItem?.id)
-      .filter((id) => id !== undefined) as number[];
+    const itemIds: number[] = [];
+    for (const item of items as (Movie & {
+      playlistItem: PlaylistItem | null;
+    })[]) {
+      if (item.playlistItem?.id) {
+        itemIds.push(item.playlistItem.id);
+      }
+    }
 
     // Send reorder API request
-    reorderPlaylistMutation.mutate(newOrder);
+    reorderPlaylistMutation.mutate(itemIds);
   };
 
   // Open notes dialog for a movie
@@ -315,20 +321,14 @@ export default function PlaylistDetailPage() {
   if (isLoading) {
     return (
       <Container className="py-8">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Skeleton className="h-8 w-64" />
-          </div>
-          <Skeleton className="h-4 w-48" />
-          <Separator className="my-6" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-48 rounded-lg" />
-            ))}
-          </div>
+        <div className="flex flex-col items-center justify-center h-[60vh]">
+          <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
+          <h2 className="text-xl font-medium text-muted-foreground">
+            Loading playlist...
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please wait while we retrieve your playlist data
+          </p>
         </div>
       </Container>
     );
@@ -476,135 +476,142 @@ export default function PlaylistDetailPage() {
                   {...provided.droppableProps}
                   ref={provided.innerRef}
                 >
-                  {playlist.movies.map((movie, index) => (
-                    <Draggable
-                      key={movie.id.toString()}
-                      draggableId={movie.id.toString()}
-                      index={index}
-                      isDragDisabled={!isReordering}
-                    >
-                      {(provided) => (
-                        <Card
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={`overflow-hidden transition-all ${
-                            isReordering
-                              ? "border-dashed border-2 cursor-grab"
-                              : ""
-                          }`}
-                        >
-                          <div className="relative">
-                            <AspectRatio ratio={2 / 3}>
-                              <img
-                                src={movie.imageUrl}
-                                alt={movie.title}
-                                className="object-cover w-full h-full rounded-t-md"
-                              />
-                            </AspectRatio>
-                            {isReordering && (
-                              <div
-                                className="absolute top-2 right-2 p-1 bg-background/80 rounded-md cursor-grab"
-                                {...provided.dragHandleProps}
-                              >
-                                <GripVertical className="h-5 w-5" />
-                              </div>
-                            )}
-                          </div>
-
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-bold text-lg leading-tight">
-                                {movie.title}
-                              </h3>
-                              <div className="flex items-center">
-                                <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                                <span>{movie.rating.toFixed(1)}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {movie.categories?.slice(0, 3).map((category) => (
-                                <Badge
-                                  key={category}
-                                  variant="secondary"
-                                  className="text-xs"
+                  {playlist.movies.map(
+                    (
+                      movie: Movie & { playlistItem: PlaylistItem | null },
+                      index: number
+                    ) => (
+                      <Draggable
+                        key={movie.id.toString()}
+                        draggableId={movie.id.toString()}
+                        index={index}
+                        isDragDisabled={!isReordering}
+                      >
+                        {(provided) => (
+                          <Card
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`overflow-hidden transition-all ${
+                              isReordering
+                                ? "border-dashed border-2 cursor-grab"
+                                : ""
+                            }`}
+                          >
+                            <div className="relative">
+                              <AspectRatio ratio={2 / 3}>
+                                <img
+                                  src={movie.imageUrl}
+                                  alt={movie.title}
+                                  className="object-cover w-full h-full rounded-t-md"
+                                />
+                              </AspectRatio>
+                              {isReordering && (
+                                <div
+                                  className="absolute top-2 right-2 p-1 bg-background/80 rounded-md cursor-grab"
+                                  {...provided.dragHandleProps}
                                 >
-                                  {category}
-                                </Badge>
-                              ))}
-                              {movie.categories &&
-                                movie.categories.length > 3 && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    +{movie.categories.length - 3} more
-                                  </Badge>
-                                )}
+                                  <GripVertical className="h-5 w-5" />
+                                </div>
+                              )}
                             </div>
 
-                            {movie.playlistItem?.notes && (
-                              <div className="mt-3 p-2 bg-muted rounded-md text-sm">
-                                <p className="line-clamp-3">
-                                  {movie.playlistItem.notes}
-                                </p>
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-bold text-lg leading-tight">
+                                  {movie.title}
+                                </h3>
+                                <div className="flex items-center">
+                                  <Star className="h-4 w-4 text-yellow-500 mr-1" />
+                                  <span>{movie.rating.toFixed(1)}</span>
+                                </div>
                               </div>
-                            )}
-                          </CardContent>
 
-                          <CardFooter className="p-4 pt-0 flex justify-between">
-                            <Button variant="secondary" size="sm" asChild>
-                              <Link href={`/movies/${movie.id}`}>
-                                View Details
-                              </Link>
-                            </Button>
-
-                            {isOwner && !isReordering && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="24"
-                                      height="24"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="h-4 w-4"
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {movie.categories
+                                  ?.slice(0, 3)
+                                  .map((category: string) => (
+                                    <Badge
+                                      key={category}
+                                      variant="secondary"
+                                      className="text-xs"
                                     >
-                                      <circle cx="12" cy="12" r="1" />
-                                      <circle cx="19" cy="12" r="1" />
-                                      <circle cx="5" cy="12" r="1" />
-                                    </svg>
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => handleEditNotes(movie)}
-                                  >
-                                    <Pencil className="h-4 w-4 mr-2" />
-                                    Edit Notes
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
-                                    onClick={() =>
-                                      removeMovieMutation.mutate(movie.id)
-                                    }
-                                  >
-                                    <Trash className="h-4 w-4 mr-2" />
-                                    Remove from Playlist
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </CardFooter>
-                        </Card>
-                      )}
-                    </Draggable>
-                  ))}
+                                      {category}
+                                    </Badge>
+                                  ))}
+                                {movie.categories &&
+                                  movie.categories.length > 3 && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      +{movie.categories.length - 3} more
+                                    </Badge>
+                                  )}
+                              </div>
+
+                              {movie.playlistItem?.notes && (
+                                <div className="mt-3 p-2 bg-muted rounded-md text-sm">
+                                  <p className="line-clamp-3">
+                                    {movie.playlistItem.notes}
+                                  </p>
+                                </div>
+                              )}
+                            </CardContent>
+
+                            <CardFooter className="p-4 pt-0 flex justify-between">
+                              <Button variant="secondary" size="sm" asChild>
+                                <Link href={`/movies/${movie.id}`}>
+                                  View Details
+                                </Link>
+                              </Button>
+
+                              {isOwner && !isReordering && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="h-4 w-4"
+                                      >
+                                        <circle cx="12" cy="12" r="1" />
+                                        <circle cx="19" cy="12" r="1" />
+                                        <circle cx="5" cy="12" r="1" />
+                                      </svg>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditNotes(movie)}
+                                    >
+                                      <Pencil className="h-4 w-4 mr-2" />
+                                      Edit Notes
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive focus:text-destructive"
+                                      onClick={() =>
+                                        removeMovieMutation.mutate(movie.id)
+                                      }
+                                    >
+                                      <Trash className="h-4 w-4 mr-2" />
+                                      Remove from Playlist
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </CardFooter>
+                          </Card>
+                        )}
+                      </Draggable>
+                    )
+                  )}
                   {provided.placeholder}
                 </div>
               )}
