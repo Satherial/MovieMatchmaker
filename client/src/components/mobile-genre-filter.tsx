@@ -1,9 +1,10 @@
-import React, { FC, useState, useEffect } from 'react';
-import { Genre, FilterState } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useGenreTransition } from '@/contexts/genre-transition-context';
+import React, { FC, useState, useEffect } from "react";
+import { Genre, FilterState } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { useGenreTransition } from "@/contexts/genre-transition-context";
+import { languageNames } from "@/hooks/use-language";
 
 interface MobileGenreFilterProps {
   categories: Genre[];
@@ -22,14 +23,27 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
   isLoading = false,
   className = "",
 }) => {
-  const yearOptions = ["Any", "2023", "2022", "2021", "2020", "2019", "2015", "2010", "2000", "1990", "1980", "1970"];
+  const yearOptions = [
+    "Any",
+    "2023",
+    "2022",
+    "2021",
+    "2020",
+    "2019",
+    "2015",
+    "2010",
+    "2000",
+    "1990",
+    "1980",
+    "1970",
+  ];
   const { setGenreTransition } = useGenreTransition();
   const [activeGenreName, setActiveGenreName] = useState<string | null>(null);
 
   // Update active genre name when filters change
   useEffect(() => {
     if (filters.categories.length === 1) {
-      const selectedGenre = genres.find(g => g.id === filters.categories[0]);
+      const selectedGenre = genres.find((g) => g.id === filters.categories[0]);
       setActiveGenreName(selectedGenre?.name || null);
     } else {
       setActiveGenreName(null);
@@ -40,40 +54,55 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
     const previousGenreName = activeGenreName;
     const currentCategories = [...filters.categories];
     const index = currentCategories.indexOf(genreId);
-    
+
     let newCategories: string[] = [];
     if (index === -1) {
       newCategories = [...currentCategories, genreId];
     } else {
-      newCategories = currentCategories.filter(id => id !== genreId);
+      newCategories = currentCategories.filter((id) => id !== genreId);
     }
 
     // Get the new genre name
     let newGenreName: string | null = null;
     if (newCategories.length === 1) {
-      const selectedGenre = genres.find(g => g.id === newCategories[0]);
+      const selectedGenre = genres.find((g) => g.id === newCategories[0]);
       newGenreName = selectedGenre?.name || null;
     }
-    
+
     // Trigger the genre transition animation
     setGenreTransition(previousGenreName, newGenreName);
-    
-    onFilterChange('categories', newCategories);
+
+    onFilterChange("categories", newCategories);
+  };
+
+  // Add immediate language filtering for mobile
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    onFilterChange("language", value);
+
+    // Optionally, apply filters immediately when language changes
+    // Uncomment the next line if you want to apply filters immediately
+    // onApplyFilters();
   };
 
   return (
-    <div className={`p-4 ${className}`} style={{
-      backgroundColor: '#ffffff',
-      borderRadius: '0.5rem',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      zIndex: 50,
-      position: 'relative',
-    }}>
-      <div style={{ backgroundColor: '#ffffff' }}>
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Find Your Movie</h2>
-      
+    <div
+      className={`p-4 ${className}`}
+      style={{
+        backgroundColor: "#ffffff",
+        borderRadius: "0.5rem",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        zIndex: 50,
+        position: "relative",
+      }}
+    >
+      <div style={{ backgroundColor: "#ffffff" }}>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          Find Your Movie
+        </h2>
+
         {/* Genres */}
-        <div className="mb-6" style={{ backgroundColor: '#ffffff' }}>
+        <div className="mb-6" style={{ backgroundColor: "#ffffff" }}>
           <h3 className="text-sm font-medium text-gray-700 mb-2">Genres</h3>
           <div className="flex flex-wrap gap-2">
             {genres.map((genre) => (
@@ -81,19 +110,23 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
                 key={genre.id}
                 className={`genre-chip px-3 py-1 text-sm rounded-full transition-colors ${
                   filters.categories.includes(genre.id)
-                    ? `bg-primary text-white active-${genre.name.toLowerCase().replace(/\s+/g, '-')}`
+                    ? `bg-primary text-white active-${genre.name
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")}`
                     : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                 }`}
                 onClick={() => handleGenreToggle(genre.id)}
                 style={{ zIndex: 10 }}
-                whileHover={{ 
+                whileHover={{
                   scale: 1.05,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)" 
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
                 whileTap={{ scale: 0.95 }}
-                animate={{ 
-                  scale: filters.categories.includes(genre.id) ? [1, 1.1, 1] : 1,
-                  transition: { duration: 0.3 }
+                animate={{
+                  scale: filters.categories.includes(genre.id)
+                    ? [1, 1.1, 1]
+                    : 1,
+                  transition: { duration: 0.3 },
                 }}
               >
                 {genre.name}
@@ -103,31 +136,56 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
         </div>
 
         {/* Minimum Rating */}
-        <div className="mb-6" style={{ backgroundColor: '#ffffff' }}>
+        <div className="mb-6" style={{ backgroundColor: "#ffffff" }}>
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-medium text-gray-700">Minimum Rating</h3>
-            <span className="text-sm font-medium w-8 text-center">{filters.minRating.toFixed(1)}</span>
+            <h3 className="text-sm font-medium text-gray-700">
+              Minimum Rating
+            </h3>
+            <span className="text-sm font-medium w-8 text-center">
+              {filters.minRating.toFixed(1)}
+            </span>
           </div>
-          <input 
-            type="range" 
-            min="1" 
-            max="10" 
-            step="0.1" 
+          <input
+            type="range"
+            min="1"
+            max="10"
+            step="0.1"
             value={filters.minRating}
-            onChange={(e) => onFilterChange('minRating', parseFloat(e.target.value))}
+            onChange={(e) =>
+              onFilterChange("minRating", parseFloat(e.target.value))
+            }
             className="w-full"
           />
         </div>
 
+        {/* Language */}
+        <div className="mb-6" style={{ backgroundColor: "#ffffff" }}>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Language</h3>
+          <select
+            value={filters.language}
+            onChange={handleLanguageChange}
+            className="w-full p-2 border border-gray-300 rounded-md bg-white"
+          >
+            <option value="all">All Languages</option>
+            {Object.entries(languageNames).map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Release Year */}
-        <div className="mb-6" style={{ backgroundColor: '#ffffff' }}>
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Release Year</h3>
+        <div className="mb-6" style={{ backgroundColor: "#ffffff" }}>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">
+            Release Year
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-500">From</label>
-              <select 
+              <select
                 value={filters.yearFrom}
-                onChange={(e) => onFilterChange('yearFrom', e.target.value)}
+                onChange={(e) => onFilterChange("yearFrom", e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-md bg-white"
               >
                 {yearOptions.map((year) => (
@@ -139,9 +197,9 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
             </div>
             <div>
               <label className="text-xs text-gray-500">To</label>
-              <select 
+              <select
                 value={filters.yearTo}
-                onChange={(e) => onFilterChange('yearTo', e.target.value)}
+                onChange={(e) => onFilterChange("yearTo", e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-md bg-white"
               >
                 {yearOptions.map((year) => (
@@ -154,10 +212,7 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
           </div>
         </div>
 
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             className="w-full"
             onClick={onApplyFilters}

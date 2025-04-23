@@ -104,10 +104,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const queryParams = new URLSearchParams({
         include_adult: "false",
         include_video: "false",
-        language: "en-US",
+        language: "en-US", // Default language
         page: (query.page as string) || "1",
         sort_by: (query.sort as string) || "primary_release_date.desc",
       });
+
+      // Support language filter if provided
+      if (query.language && query.language !== "all") {
+        // Cast language to string and ensure it's a single value
+        const langCode = String(query.language);
+
+        // Override the default language with the user's selection for API responses
+        // Format like "en-US", "fr-FR", etc.
+        queryParams.set("language", `${langCode}-${langCode.toUpperCase()}`);
+
+        // Filter movies in the chosen language
+        // This finds movies where the original language matches the selected language
+        queryParams.append("with_original_language", langCode);
+
+        console.log(`🌐 Language filter applied: ${langCode}`);
+      } else {
+        // Default language handling - use English if no language specified
+        // This provides localized content but doesn't filter by original language
+        queryParams.set("language", "en-US");
+      }
 
       // Add year filter if provided
       if (query.yearFrom && query.yearFrom !== "Any") {

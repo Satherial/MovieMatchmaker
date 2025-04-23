@@ -24,7 +24,7 @@ export interface Movie {
 }
 
 // MovieWithCategories extends the base Movie type without the id field
-export interface MovieWithCategories extends Omit<Movie, 'id'> {
+export interface MovieWithCategories extends Omit<Movie, "id"> {
   id: number;
   categories: string[];
 }
@@ -50,6 +50,7 @@ export interface FilterState {
   minRating: number;
   yearFrom: string;
   yearTo: string;
+  language: string;
 }
 
 export interface PaginationMetadata {

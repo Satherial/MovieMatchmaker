@@ -9,6 +9,8 @@ import MobileWatchHistory from "@/components/mobile-watch-history";
 import MovieCard from "@/components/movie-card";
 import ConfirmationModal from "@/components/confirmation-modal";
 import FilterSummary from "@/components/filter-summary";
+import LanguageSelector from "@/components/language-selector";
+import { useLanguage, languageNames } from "@/hooks/use-language";
 import {
   Movie,
   WatchedMovie,
@@ -31,6 +33,7 @@ import AnimatedGenreTransition from "@/components/animated-genre-transition";
 
 const Home: FC = () => {
   const isMobile = useIsMobile();
+  const { language, setPreferredLanguage, browserLanguage } = useLanguage();
   const [showHistory, setShowHistory] = useState(!isMobile);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [sortOrder, setSortOrder] = useState<string>(
@@ -41,13 +44,28 @@ const Home: FC = () => {
     minRating: 1,
     yearFrom: "Any",
     yearTo: "Any",
+    language: language, // Initialize with the language from our hook
   });
   const [appliedFilters, setAppliedFilters] = useState<FilterState>(filters);
+
+  // Create a state to track the currently selected language for the UI
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(language);
 
   // Reset show history when screen size changes
   useEffect(() => {
     setShowHistory(!isMobile);
   }, [isMobile]);
+
+  // Update filters when language changes but don't apply them automatically
+  // (handled by the language selector callback instead)
+  useEffect(() => {
+    setFilters((prev) => ({ ...prev, language }));
+  }, [language]);
+
+  // Update selectedLanguage when language hook value changes
+  useEffect(() => {
+    setSelectedLanguage(language);
+  }, [language]);
 
   // Fetch genres (still called "categories" in API)
   const { data: categories = [] } = useQuery<Genre[]>({
@@ -84,6 +102,10 @@ const Home: FC = () => {
             : undefined,
         yearTo:
           appliedFilters.yearTo !== "Any" ? appliedFilters.yearTo : undefined,
+        language:
+          appliedFilters.language !== "all"
+            ? appliedFilters.language
+            : undefined,
         sort: sortOrder,
         page: currentPage,
         limit: 12,
@@ -91,10 +113,10 @@ const Home: FC = () => {
     ],
   });
 
-  // Refetch when sort order changes
+  // Refetch when sort order changes or applied filters change
   useEffect(() => {
     refetch();
-  }, [sortOrder, refetch]);
+  }, [sortOrder, appliedFilters.language, refetch]);
 
   // Extract movies and pagination from response or set defaults
   const movies = moviesData?.movies || [];
@@ -126,6 +148,13 @@ const Home: FC = () => {
     } else if (type === "yearFrom" || type === "yearTo") {
       setFilters((prev) => ({ ...prev, [type]: "Any" }));
       setAppliedFilters((prev) => ({ ...prev, [type]: "Any" }));
+    } else if (type === "language") {
+      // Reset to browser's default language instead of "all"
+      setFilters((prev) => ({ ...prev, language: browserLanguage }));
+      setAppliedFilters((prev) => ({ ...prev, language: browserLanguage }));
+      // Also update the language selector state
+      setPreferredLanguage(browserLanguage);
+      setSelectedLanguage(browserLanguage);
     }
   };
 
@@ -135,9 +164,13 @@ const Home: FC = () => {
       minRating: 1,
       yearFrom: "Any",
       yearTo: "Any",
+      language: browserLanguage, // Reset to browser's default language instead of "all"
     };
     setFilters(resetFilters);
     setAppliedFilters(resetFilters);
+    // Also update the language selector state
+    setPreferredLanguage(browserLanguage);
+    setSelectedLanguage(browserLanguage);
   };
 
   const handleWatchClick = (movie: Movie) => {
@@ -146,6 +179,14 @@ const Home: FC = () => {
 
   const handleCloseModal = () => {
     setSelectedMovie(null);
+  };
+
+  // Modify handleLanguageChange to update selectedLanguage
+  const handleLanguageChange = (newLanguage: string) => {
+    // This will be called directly when language changes via the selector
+    setCurrentPage(1); // Reset to first page
+    setAppliedFilters((prev) => ({ ...prev, language: newLanguage }));
+    setSelectedLanguage(newLanguage); // Update the selected language state
   };
 
   return (
@@ -219,60 +260,68 @@ const Home: FC = () => {
                     <CardTitle className="text-xl font-semibold text-gray-800">
                       Recommended Movies
                     </CardTitle>
-                    <div className="flex items-center">
-                      <span className="mr-2 text-sm text-gray-600">
-                        Sort by:
-                      </span>
-                      <Select
-                        value={sortOrder}
-                        onValueChange={(value) => setSortOrder(value)}
-                      >
-                        <SelectTrigger className="text-sm border rounded-md p-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="popularity.desc">
-                            Popularity (High to Low)
-                          </SelectItem>
-                          <SelectItem value="popularity.asc">
-                            Popularity (Low to High)
-                          </SelectItem>
-                          <SelectItem value="vote_average.desc">
-                            Rating (High to Low)
-                          </SelectItem>
-                          <SelectItem value="vote_average.asc">
-                            Rating (Low to High)
-                          </SelectItem>
-                          <SelectItem value="vote_count.desc">
-                            Vote Count (High to Low)
-                          </SelectItem>
-                          <SelectItem value="vote_count.asc">
-                            Vote Count (Low to High)
-                          </SelectItem>
-                          <SelectItem value="primary_release_date.desc">
-                            Release Date (Newest)
-                          </SelectItem>
-                          <SelectItem value="primary_release_date.asc">
-                            Release Date (Oldest)
-                          </SelectItem>
-                          <SelectItem value="title.asc">Title (A-Z)</SelectItem>
-                          <SelectItem value="title.desc">
-                            Title (Z-A)
-                          </SelectItem>
-                          <SelectItem value="revenue.desc">
-                            Revenue (High to Low)
-                          </SelectItem>
-                          <SelectItem value="revenue.asc">
-                            Revenue (Low to High)
-                          </SelectItem>
-                          <SelectItem value="original_title.asc">
-                            Original Title (A-Z)
-                          </SelectItem>
-                          <SelectItem value="original_title.desc">
-                            Original Title (Z-A)
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center space-x-4">
+                      <LanguageSelector
+                        selectedLanguage={selectedLanguage}
+                        onLanguageChange={handleLanguageChange}
+                      />
+                      <div className="flex items-center">
+                        <span className="mr-2 text-sm text-gray-600">
+                          Sort by:
+                        </span>
+                        <Select
+                          value={sortOrder}
+                          onValueChange={(value) => setSortOrder(value)}
+                        >
+                          <SelectTrigger className="text-sm border rounded-md p-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="popularity.desc">
+                              Popularity (High to Low)
+                            </SelectItem>
+                            <SelectItem value="popularity.asc">
+                              Popularity (Low to High)
+                            </SelectItem>
+                            <SelectItem value="vote_average.desc">
+                              Rating (High to Low)
+                            </SelectItem>
+                            <SelectItem value="vote_average.asc">
+                              Rating (Low to High)
+                            </SelectItem>
+                            <SelectItem value="vote_count.desc">
+                              Vote Count (High to Low)
+                            </SelectItem>
+                            <SelectItem value="vote_count.asc">
+                              Vote Count (Low to High)
+                            </SelectItem>
+                            <SelectItem value="primary_release_date.desc">
+                              Release Date (Newest)
+                            </SelectItem>
+                            <SelectItem value="primary_release_date.asc">
+                              Release Date (Oldest)
+                            </SelectItem>
+                            <SelectItem value="title.asc">
+                              Title (A-Z)
+                            </SelectItem>
+                            <SelectItem value="title.desc">
+                              Title (Z-A)
+                            </SelectItem>
+                            <SelectItem value="revenue.desc">
+                              Revenue (High to Low)
+                            </SelectItem>
+                            <SelectItem value="revenue.asc">
+                              Revenue (Low to High)
+                            </SelectItem>
+                            <SelectItem value="original_title.asc">
+                              Original Title (A-Z)
+                            </SelectItem>
+                            <SelectItem value="original_title.desc">
+                              Original Title (Z-A)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
