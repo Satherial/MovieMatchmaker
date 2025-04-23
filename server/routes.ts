@@ -10,6 +10,7 @@ import {
   insertWatchHistorySchema,
   insertPlaylistSchema,
   insertPlaylistItemSchema,
+  InsertWatchHistory,
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { setupMCPRoutes } from "./mcp/routes";
@@ -294,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rating: tmdbMovie.vote_average,
         imageUrl: tmdbMovie.poster_path
           ? `${TMDB_IMAGE_BASE_URL}${tmdbMovie.poster_path}`
-          : null,
+          : "",
         backdropUrl: tmdbMovie.backdrop_path
           ? `${TMDB_IMAGE_BASE_URL}${tmdbMovie.backdrop_path}`
           : null,
@@ -330,33 +331,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         watchHistory = await storage.getWatchHistory();
       }
 
-      // Enhance with movie details
+      // Enhance watch history with movie details
       const enhancedHistory = await Promise.all(
         watchHistory.map(async (item) => {
-          const movie = await storage.getMovie(item.movieId);
+          try {
+            // Try to get movie from local database first
+            let movie = await storage.getMovie(item.movieId);
 
-          if (movie) {
-            // Get movie categories
-            const movieCategories = await storage.getMovieCategories(
-              item.movieId
-            );
-            const categories = await Promise.all(
-              movieCategories.map(async (mc) => {
-                const cat = await storage.getCategory(mc.categoryId);
-                return cat ? cat.name : null;
-              })
-            );
+            if (!movie) {
+              // If not in local database, try to fetch from TMDB API
+              const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+              const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+              const tmdbResponse = await fetch(
+                `${TMDB_BASE_URL}/movie/${item.movieId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              ).then((res) => (res.ok ? res.json() : null));
+
+              if (tmdbResponse) {
+                movie = {
+                  id: tmdbResponse.id,
+                  title: tmdbResponse.title,
+                  description: tmdbResponse.overview,
+                  year: new Date(tmdbResponse.release_date).getFullYear(),
+                  rating: tmdbResponse.vote_average,
+                  imageUrl: tmdbResponse.poster_path
+                    ? `${TMDB_IMAGE_BASE_URL}${tmdbResponse.poster_path}`
+                    : "",
+                };
+              }
+            }
 
             return {
               ...item,
+              movie: movie || {
+                id: item.movieId,
+                title: item.notes || "Unknown Movie",
+                imageUrl: null,
+                description: null,
+              },
+            };
+          } catch (error) {
+            console.error(`Error fetching movie ${item.movieId}:`, error);
+            return {
+              ...item,
               movie: {
-                ...movie,
-                categories: categories.filter(Boolean) as string[],
+                id: item.movieId,
+                title: item.notes || "Unknown Movie",
+                imageUrl: null,
+                description: null,
               },
             };
           }
-
-          return item;
         })
       );
 
@@ -370,31 +401,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add to watch history
   apiRouter.post("/watch-history", async (req, res) => {
     try {
-      // Get base data from request
-      const { movieId, rating, notes } = req.body;
+      // Get data from request
+      const { movieId, title, imageUrl, description, rating, notes } = req.body;
 
-      if (!movieId) {
-        return res.status(400).json({ error: "Movie ID is required" });
-      }
-
-      // Check if movie exists
-      const movie = await storage.getMovie(Number(movieId));
-      if (!movie) {
-        return res.status(404).json({ error: "Movie not found" });
+      // Check if required fields are provided
+      if (!movieId || !title) {
+        return res
+          .status(400)
+          .json({ error: "Movie ID and title are required" });
       }
 
       // Create watch history entry
-      let watchHistoryData: any = {
+      const watchHistoryData: InsertWatchHistory = {
         movieId: Number(movieId),
-        watchedAt: new Date(),
+        userId: req.isAuthenticated() ? getAuthUser(req).id : 1, // Default to user 1 if not authenticated
         rating: rating || null,
         notes: notes || null,
       };
-
-      // If authenticated, add userId
-      if (req.isAuthenticated()) {
-        watchHistoryData.userId = getAuthUser(req).id;
-      }
 
       // Validate the request data
       const validation = insertWatchHistorySchema.safeParse(watchHistoryData);
@@ -405,13 +428,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add to watch history
       const result = await storage.addToWatchHistory(validation.data);
 
-      // Return with movie details
-      const watchHistoryWithMovie = {
+      // Return result with movie info
+      res.status(201).json({
         ...result,
-        movie,
-      };
-
-      res.status(201).json(watchHistoryWithMovie);
+        movie: {
+          id: movieId,
+          title,
+          imageUrl: imageUrl || null,
+          description: description || null,
+        },
+      });
     } catch (error) {
       console.error("Error adding to watch history:", error);
       res.status(500).json({ error: "Failed to add to watch history" });

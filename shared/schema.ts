@@ -1,4 +1,13 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, primaryKey } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  doublePrecision,
+  primaryKey,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -63,8 +72,12 @@ export const categoriesRelations = relations(categories, ({ many }) => ({
 // Movie Genres (junction table) - renamed from Movie Categories
 export const movieCategories = pgTable("movie_categories", {
   id: serial("id").primaryKey(),
-  movieId: integer("movie_id").notNull().references(() => movies.id),
-  categoryId: integer("category_id").notNull().references(() => categories.id),
+  movieId: integer("movie_id")
+    .notNull()
+    .references(() => movies.id),
+  categoryId: integer("category_id")
+    .notNull()
+    .references(() => categories.id),
 });
 
 export const insertMovieGenreSchema = createInsertSchema(movieCategories).pick({
@@ -75,22 +88,27 @@ export const insertMovieGenreSchema = createInsertSchema(movieCategories).pick({
 export type InsertMovieGenre = z.infer<typeof insertMovieGenreSchema>;
 export type MovieGenre = typeof movieCategories.$inferSelect;
 
-export const movieCategoriesRelations = relations(movieCategories, ({ one }) => ({
-  movie: one(movies, {
-    fields: [movieCategories.movieId],
-    references: [movies.id],
-  }),
-  genre: one(categories, {
-    fields: [movieCategories.categoryId],
-    references: [categories.id],
-  }),
-}));
+export const movieCategoriesRelations = relations(
+  movieCategories,
+  ({ one }) => ({
+    movie: one(movies, {
+      fields: [movieCategories.movieId],
+      references: [movies.id],
+    }),
+    genre: one(categories, {
+      fields: [movieCategories.categoryId],
+      references: [categories.id],
+    }),
+  })
+);
 
 // Watch History table
 export const watchHistory = pgTable("watch_history", {
   id: serial("id").primaryKey(),
-  movieId: integer("movie_id").notNull().references(() => movies.id),
-  userId: integer("user_id").notNull().references(() => users.id),
+  movieId: integer("movie_id").notNull(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
   watchedAt: timestamp("watched_at").notNull().defaultNow(),
   rating: integer("rating"), // Optional user rating (1-10)
   notes: text("notes"), // Optional user notes about the movie
@@ -107,10 +125,6 @@ export type InsertWatchHistory = z.infer<typeof insertWatchHistorySchema>;
 export type WatchHistory = typeof watchHistory.$inferSelect;
 
 export const watchHistoryRelations = relations(watchHistory, ({ one }) => ({
-  movie: one(movies, {
-    fields: [watchHistory.movieId],
-    references: [movies.id],
-  }),
   user: one(users, {
     fields: [watchHistory.userId],
     references: [users.id],
@@ -147,13 +161,17 @@ export const usersRelations = relations(users, ({ many }) => ({
   receivedFriendRequests: many(friendships, { relationName: "friendUsers" }),
   sharedWithMe: many(playlistShares, { relationName: "sharedPlaylists" }),
   initiatedWatches: many(sharedWatches, { relationName: "initiatedWatches" }),
-  participatedWatches: many(sharedWatches, { relationName: "participatedWatches" }),
+  participatedWatches: many(sharedWatches, {
+    relationName: "participatedWatches",
+  }),
 }));
 
 // Playlists table
 export const playlists = pgTable("playlists", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
   name: text("name").notNull(),
   description: text("description"),
   isPublic: boolean("is_public").notNull().default(false),
@@ -181,20 +199,26 @@ export const playlistsRelations = relations(playlists, ({ one, many }) => ({
 }));
 
 // Playlist Items table (junction table between playlists and movies)
-export const playlistItems = pgTable("playlist_items", {
-  id: serial("id").primaryKey(),
-  playlistId: integer("playlist_id").notNull().references(() => playlists.id, { onDelete: 'cascade' }),
-  movieId: integer("movie_id").notNull().references(() => movies.id),
-  addedAt: timestamp("added_at").notNull().defaultNow(),
-  notes: text("notes"),
-  sortOrder: integer("sort_order").notNull(),
-}, (table) => {
-  return {
-    playlistMovieUnique: primaryKey({
-      columns: [table.playlistId, table.movieId]
-    })
+export const playlistItems = pgTable(
+  "playlist_items",
+  {
+    id: serial("id").primaryKey(),
+    playlistId: integer("playlist_id")
+      .notNull()
+      .references(() => playlists.id, { onDelete: "cascade" }),
+    movieId: integer("movie_id").notNull(),
+    addedAt: timestamp("added_at").notNull().defaultNow(),
+    notes: text("notes"),
+    sortOrder: integer("sort_order").notNull(),
+  },
+  (table) => {
+    return {
+      playlistMovieUnique: primaryKey({
+        columns: [table.playlistId, table.movieId],
+      }),
+    };
   }
-});
+);
 
 export const insertPlaylistItemSchema = createInsertSchema(playlistItems).pick({
   playlistId: true,
@@ -218,20 +242,28 @@ export const playlistItemsRelations = relations(playlistItems, ({ one }) => ({
 }));
 
 // Friendships/Social table
-export const friendships = pgTable("friendships", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  friendId: integer("friend_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-}, (table) => {
-  return {
-    userFriendUnique: primaryKey({
-      columns: [table.userId, table.friendId]
-    })
+export const friendships = pgTable(
+  "friendships",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    friendId: integer("friend_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending"), // pending, accepted, rejected
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => {
+    return {
+      userFriendUnique: primaryKey({
+        columns: [table.userId, table.friendId],
+      }),
+    };
   }
-});
+);
 
 export const insertFriendshipSchema = createInsertSchema(friendships).pick({
   userId: true,
@@ -247,31 +279,41 @@ export const friendshipsRelations = relations(friendships, ({ one }) => ({
   user: one(users, {
     fields: [friendships.userId],
     references: [users.id],
-    relationName: "userFriends"
+    relationName: "userFriends",
   }),
   friend: one(users, {
     fields: [friendships.friendId],
     references: [users.id],
-    relationName: "friendUsers"
+    relationName: "friendUsers",
   }),
 }));
 
 // Playlist shares table (for shared playlists)
-export const playlistShares = pgTable("playlist_shares", {
-  id: serial("id").primaryKey(),
-  playlistId: integer("playlist_id").notNull().references(() => playlists.id, { onDelete: 'cascade' }),
-  sharedWithUserId: integer("shared_with_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  canEdit: boolean("can_edit").notNull().default(false),
-  sharedAt: timestamp("shared_at").notNull().defaultNow(),
-}, (table) => {
-  return {
-    playlistUserUnique: primaryKey({
-      columns: [table.playlistId, table.sharedWithUserId]
-    })
+export const playlistShares = pgTable(
+  "playlist_shares",
+  {
+    id: serial("id").primaryKey(),
+    playlistId: integer("playlist_id")
+      .notNull()
+      .references(() => playlists.id, { onDelete: "cascade" }),
+    sharedWithUserId: integer("shared_with_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    canEdit: boolean("can_edit").notNull().default(false),
+    sharedAt: timestamp("shared_at").notNull().defaultNow(),
+  },
+  (table) => {
+    return {
+      playlistUserUnique: primaryKey({
+        columns: [table.playlistId, table.sharedWithUserId],
+      }),
+    };
   }
-});
+);
 
-export const insertPlaylistShareSchema = createInsertSchema(playlistShares).pick({
+export const insertPlaylistShareSchema = createInsertSchema(
+  playlistShares
+).pick({
   playlistId: true,
   sharedWithUserId: true,
   canEdit: true,
@@ -294,9 +336,13 @@ export const playlistSharesRelations = relations(playlistShares, ({ one }) => ({
 // Shared watching experiences
 export const sharedWatches = pgTable("shared_watches", {
   id: serial("id").primaryKey(),
-  movieId: integer("movie_id").notNull().references(() => movies.id),
-  initiatedByUserId: integer("initiated_by_user_id").notNull().references(() => users.id),
-  watchedWithUserId: integer("watched_with_user_id").notNull().references(() => users.id),
+  movieId: integer("movie_id").notNull(),
+  initiatedByUserId: integer("initiated_by_user_id")
+    .notNull()
+    .references(() => users.id),
+  watchedWithUserId: integer("watched_with_user_id")
+    .notNull()
+    .references(() => users.id),
   watchedAt: timestamp("watched_at").notNull().defaultNow(),
   rating: integer("rating"), // Combined rating
   notes: text("notes"), // Shared notes
@@ -321,11 +367,11 @@ export const sharedWatchesRelations = relations(sharedWatches, ({ one }) => ({
   initiatedByUser: one(users, {
     fields: [sharedWatches.initiatedByUserId],
     references: [users.id],
-    relationName: "initiatedWatches"
+    relationName: "initiatedWatches",
   }),
   watchedWithUser: one(users, {
     fields: [sharedWatches.watchedWithUserId],
     references: [users.id],
-    relationName: "participatedWatches"
+    relationName: "participatedWatches",
   }),
 }));
