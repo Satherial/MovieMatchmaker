@@ -466,6 +466,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a single watch history item
+  apiRouter.delete("/watch-history/:id", async (req, res) => {
+    try {
+      const watchHistoryId = parseInt(req.params.id);
+
+      if (isNaN(watchHistoryId)) {
+        return res.status(400).json({ error: "Invalid watch history ID" });
+      }
+
+      // Remove the watch history entry
+      await storage.removeWatchHistory(watchHistoryId);
+
+      res
+        .status(200)
+        .json({ message: "Watch history item removed successfully" });
+    } catch (error) {
+      console.error("Error removing watch history item:", error);
+      res.status(500).json({ error: "Failed to remove watch history item" });
+    }
+  });
+
   // Get movie recommendations based on user's watch history
   apiRouter.get("/recommendations", isAuthenticated, async (req, res) => {
     try {

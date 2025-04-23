@@ -13,7 +13,6 @@ import { Genre, FilterState } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 import { useGenreTransition } from "@/contexts/genre-transition-context";
 import { motion } from "framer-motion";
-import { languageNames } from "@/hooks/use-language";
 
 interface GenreFilterProps {
   categories: Genre[];
@@ -133,27 +132,6 @@ const GenreFilter: FC<GenreFilterProps> = ({
             step={0.1}
             onValueChange={(value) => onFilterChange("minRating", value[0])}
           />
-        </div>
-
-        {/* Language */}
-        <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Language</h3>
-          <Select
-            value={filters.language}
-            onValueChange={(value) => onFilterChange("language", value)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Any Language" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Languages</SelectItem>
-              {Object.entries(languageNames).map(([code, name]) => (
-                <SelectItem key={code} value={code}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Release Year */}

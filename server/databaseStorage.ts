@@ -1,16 +1,36 @@
 import { eq, and, or, gte, lte, desc, asc, sql, inArray } from "drizzle-orm";
 import { db } from "./db";
 import {
-  User, InsertUser, users,
-  Movie, InsertMovie, movies,
-  Genre, InsertGenre, categories,
-  MovieGenre, InsertMovieGenre, movieCategories,
-  WatchHistory, InsertWatchHistory, watchHistory,
-  Playlist, InsertPlaylist, playlists,
-  PlaylistItem, InsertPlaylistItem, playlistItems,
-  Friendship, InsertFriendship, friendships,
-  PlaylistShare, InsertPlaylistShare, playlistShares,
-  SharedWatch, InsertSharedWatch, sharedWatches
+  User,
+  InsertUser,
+  users,
+  Movie,
+  InsertMovie,
+  movies,
+  Genre,
+  InsertGenre,
+  categories,
+  MovieGenre,
+  InsertMovieGenre,
+  movieCategories,
+  WatchHistory,
+  InsertWatchHistory,
+  watchHistory,
+  Playlist,
+  InsertPlaylist,
+  playlists,
+  PlaylistItem,
+  InsertPlaylistItem,
+  playlistItems,
+  Friendship,
+  InsertFriendship,
+  friendships,
+  PlaylistShare,
+  InsertPlaylistShare,
+  playlistShares,
+  SharedWatch,
+  InsertSharedWatch,
+  sharedWatches,
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
@@ -24,8 +44,11 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
-  
-  async saveUserPreferences(userId: number, preferences: string): Promise<User> {
+
+  async saveUserPreferences(
+    userId: number,
+    preferences: string
+  ): Promise<User> {
     const [user] = await db
       .update(users)
       .set({ preferences })
@@ -33,57 +56,58 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
-  
+
   async getUserPreferences(userId: number): Promise<string | null> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
-    
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+
     return user ? user.preferences : null;
   }
-  
+
   // User-specific watch history operations
   async getUserWatchedMovieIds(userId: number): Promise<number[]> {
     const result = await db
       .select({ movieId: watchHistory.movieId })
       .from(watchHistory)
       .where(eq(watchHistory.userId, userId));
-    
-    return result.map(item => item.movieId);
+
+    return result.map((item) => item.movieId);
   }
-  
+
   // User recommendations based on watch history
-  async getRecommendedMovies(userId: number, limit: number = 10): Promise<Movie[]> {
+  async getRecommendedMovies(
+    userId: number,
+    limit: number = 10
+  ): Promise<Movie[]> {
     // 1. Get user's watch history
     const watchedMovies = await this.getWatchHistory(userId);
-    const watchedMovieIds = watchedMovies.map(item => item.movieId);
-    
+    const watchedMovieIds = watchedMovies.map((item) => item.movieId);
+
     // 2. Find the most watched genres by the user
     const genreCounts: Record<number, number> = {};
-    
+
     for (const historyItem of watchedMovies) {
       const movieGenres = await this.getMovieCategories(historyItem.movieId);
-      
+
       for (const genre of movieGenres) {
-        genreCounts[genre.categoryId] = (genreCounts[genre.categoryId] || 0) + 1;
+        genreCounts[genre.categoryId] =
+          (genreCounts[genre.categoryId] || 0) + 1;
       }
     }
-    
+
     // Sort genres by count (most popular first)
     const favoriteGenres = Object.entries(genreCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3) // Take top 3 genres
       .map(([genreId]) => parseInt(genreId));
-    
+
     // 3. Find movies with these genres that the user hasn't watched
     const recommendedMovies = await this.getMovies({
       categories: favoriteGenres,
       excludeIds: watchedMovieIds,
       minRating: 7.0, // Only high-rated movies
-      sort: 'rating_desc'
+      sort: "rating_desc",
     });
-    
+
     return recommendedMovies.slice(0, limit);
   }
   // User operations
@@ -93,40 +117,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   // Movie operations
-  async getMovies(filters: {
-    categories?: number[];
-    minRating?: number;
-    yearFrom?: number;
-    yearTo?: number;
-    excludeIds?: number[];
-    sort?: string;
-    page?: number;
-    limit?: number;
-  } = {}): Promise<{ movies: Movie[], totalCount: number, totalPages: number }> {
+  async getMovies(
+    filters: {
+      categories?: number[];
+      minRating?: number;
+      yearFrom?: number;
+      yearTo?: number;
+      excludeIds?: number[];
+      sort?: string;
+      page?: number;
+      limit?: number;
+    } = {}
+  ): Promise<{ movies: Movie[]; totalCount: number; totalPages: number }> {
     console.log("Database getMovies called with filters:", filters);
-    
+
     // Set pagination defaults
     const page = filters.page !== undefined ? filters.page : 1;
     const limit = filters.limit !== undefined ? filters.limit : 12;
-    
+
     // Build conditions array for the query
     const conditions = [];
-    
+
     // The minRating filter should always be applied with a default of 1 if not specified
-    const effectiveMinRating = typeof filters.minRating === 'number' ? filters.minRating : 1;
+    const effectiveMinRating =
+      typeof filters.minRating === "number" ? filters.minRating : 1;
     conditions.push(gte(movies.rating, effectiveMinRating));
     console.log("Applying minimum rating filter:", effectiveMinRating);
 
@@ -140,11 +167,14 @@ export class DatabaseStorage implements IStorage {
       conditions.push(lte(movies.year, filters.yearTo));
       console.log("Applying year to filter:", filters.yearTo);
     }
-    
+
     // Execute the query with all conditions
     let result;
     if (conditions.length > 0) {
-      result = await db.select().from(movies).where(and(...conditions));
+      result = await db
+        .select()
+        .from(movies)
+        .where(and(...conditions));
     } else {
       result = await db.select().from(movies);
     }
@@ -152,25 +182,30 @@ export class DatabaseStorage implements IStorage {
     // Filter by categories/genres using SQL IN clause
     if (filters.categories && filters.categories.length > 0) {
       console.log("Filtering by categories/genres:", filters.categories);
-      
+
       try {
         // Use a raw SQL IN clause for filtering by category IDs
-        const categoryIdsStr = filters.categories.join(',');
+        const categoryIdsStr = filters.categories.join(",");
         const movieQuery = db
-          .select({ 
-            movieId: movieCategories.movieId 
+          .select({
+            movieId: movieCategories.movieId,
           })
           .from(movieCategories)
           .where(sql`${movieCategories.categoryId} IN (${categoryIdsStr})`);
-        
+
         const categoryMovies = await movieQuery;
-        
+
         // Create a set of movie IDs for faster lookup
-        const movieIdsWithCategories = new Set(categoryMovies.map(cm => cm.movieId));
-        console.log("Movies with specified genres:", Array.from(movieIdsWithCategories));
-        
+        const movieIdsWithCategories = new Set(
+          categoryMovies.map((cm) => cm.movieId)
+        );
+        console.log(
+          "Movies with specified genres:",
+          Array.from(movieIdsWithCategories)
+        );
+
         // Filter the results to only include movies with the specified categories
-        result = result.filter(movie => movieIdsWithCategories.has(movie.id));
+        result = result.filter((movie) => movieIdsWithCategories.has(movie.id));
       } catch (error) {
         console.error("Error filtering by categories/genres:", error);
         // Don't filter if there's an error with the query
@@ -179,19 +214,21 @@ export class DatabaseStorage implements IStorage {
 
     // Filter out watched movies
     if (filters.excludeIds && filters.excludeIds.length > 0) {
-      result = result.filter(movie => !filters.excludeIds?.includes(movie.id));
+      result = result.filter(
+        (movie) => !filters.excludeIds?.includes(movie.id)
+      );
     }
 
     // Apply sorting
     if (filters.sort) {
       switch (filters.sort) {
-        case 'rating_desc':
+        case "rating_desc":
           result.sort((a, b) => b.rating - a.rating);
           break;
-        case 'year_desc':
+        case "year_desc":
           result.sort((a, b) => b.year - a.year);
           break;
-        case 'title_asc':
+        case "title_asc":
           result.sort((a, b) => a.title.localeCompare(b.title));
           break;
       }
@@ -203,18 +240,20 @@ export class DatabaseStorage implements IStorage {
     // Calculate total count and total pages
     const totalCount = result.length;
     const totalPages = Math.ceil(totalCount / limit);
-    
+
     // Apply pagination
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
     const paginatedMovies = result.slice(startIndex, endIndex);
-    
-    console.log(`Pagination: page ${page}/${totalPages}, showing ${paginatedMovies.length} of ${totalCount} movies`);
-    
+
+    console.log(
+      `Pagination: page ${page}/${totalPages}, showing ${paginatedMovies.length} of ${totalCount} movies`
+    );
+
     return {
       movies: paginatedMovies,
       totalCount,
-      totalPages
+      totalPages,
     };
   }
 
@@ -224,10 +263,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMovie(insertMovie: InsertMovie): Promise<Movie> {
-    const [movie] = await db
-      .insert(movies)
-      .values(insertMovie)
-      .returning();
+    const [movie] = await db.insert(movies).values(insertMovie).returning();
     return movie;
   }
 
@@ -237,7 +273,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCategory(id: number): Promise<Genre | undefined> {
-    const [genre] = await db.select().from(categories).where(eq(categories.id, id));
+    const [genre] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, id));
     return genre || undefined;
   }
 
@@ -250,10 +289,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCategory(insertGenre: InsertGenre): Promise<Genre> {
-    const [genre] = await db
-      .insert(categories)
-      .values(insertGenre)
-      .returning();
+    const [genre] = await db.insert(categories).values(insertGenre).returning();
     return genre;
   }
 
@@ -265,7 +301,9 @@ export class DatabaseStorage implements IStorage {
       .where(eq(movieCategories.movieId, movieId));
   }
 
-  async addCategoryToMovie(insertMovieGenre: InsertMovieGenre): Promise<MovieGenre> {
+  async addCategoryToMovie(
+    insertMovieGenre: InsertMovieGenre
+  ): Promise<MovieGenre> {
     const [movieGenre] = await db
       .insert(movieCategories)
       .values(insertMovieGenre)
@@ -279,16 +317,18 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(watchHistory)
       .orderBy(desc(watchHistory.watchedAt));
-    
+
     // If userId is provided, filter by user
     if (userId) {
       query = query.where(eq(watchHistory.userId, userId));
     }
-    
+
     return await query;
   }
 
-  async addToWatchHistory(insertHistory: InsertWatchHistory): Promise<WatchHistory> {
+  async addToWatchHistory(
+    insertHistory: InsertWatchHistory
+  ): Promise<WatchHistory> {
     const [watchHistoryEntry] = await db
       .insert(watchHistory)
       .values(insertHistory)
@@ -304,6 +344,10 @@ export class DatabaseStorage implements IStorage {
       // Otherwise clear all history
       await db.delete(watchHistory);
     }
+  }
+
+  async removeWatchHistory(id: number): Promise<void> {
+    await db.delete(watchHistory).where(eq(watchHistory.id, id));
   }
 
   // Playlist operations
@@ -331,11 +375,14 @@ export class DatabaseStorage implements IStorage {
     return newPlaylist;
   }
 
-  async updatePlaylist(id: number, playlist: Partial<Playlist>): Promise<Playlist> {
+  async updatePlaylist(
+    id: number,
+    playlist: Partial<Playlist>
+  ): Promise<Playlist> {
     // Always update the updatedAt timestamp
     const updatedData = {
       ...playlist,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     const [updatedPlaylist] = await db
@@ -363,28 +410,32 @@ export class DatabaseStorage implements IStorage {
   async getPlaylistMovies(playlistId: number): Promise<Movie[]> {
     // First get all playlist items
     const items = await this.getPlaylistItems(playlistId);
-    
+
     if (items.length === 0) {
       return [];
     }
 
     // Get movie IDs from playlist items
-    const movieIds = items.map(item => item.movieId);
-    
+    const movieIds = items.map((item) => item.movieId);
+
     // Get all movies in the playlist
     const playlistMovies = await db
       .select()
       .from(movies)
       .where(inArray(movies.id, movieIds));
-    
+
     // Sort movies in the order they appear in the playlist
-    return items.map(item => {
-      const movie = playlistMovies.find(m => m.id === item.movieId);
-      return movie!;
-    }).filter(Boolean);
+    return items
+      .map((item) => {
+        const movie = playlistMovies.find((m) => m.id === item.movieId);
+        return movie!;
+      })
+      .filter(Boolean);
   }
 
-  async addMovieToPlaylist(playlistItem: InsertPlaylistItem): Promise<PlaylistItem> {
+  async addMovieToPlaylist(
+    playlistItem: InsertPlaylistItem
+  ): Promise<PlaylistItem> {
     // Check if the movie is already in the playlist
     const existingItems = await db
       .select()
@@ -397,7 +448,7 @@ export class DatabaseStorage implements IStorage {
       );
 
     if (existingItems.length > 0) {
-      throw new Error('Movie already exists in this playlist');
+      throw new Error("Movie already exists in this playlist");
     }
 
     // Get the highest sort order
@@ -410,36 +461,42 @@ export class DatabaseStorage implements IStorage {
 
     // Set the new sort order
     const newSortOrder = lastItem ? lastItem.sortOrder + 1 : 0;
-    
+
     // Create the new playlist item
     const [newItem] = await db
       .insert(playlistItems)
       .values({
         ...playlistItem,
-        sortOrder: playlistItem.sortOrder ?? newSortOrder
+        sortOrder: playlistItem.sortOrder ?? newSortOrder,
       })
       .returning();
 
     // Update the playlist's updatedAt timestamp
     await this.updatePlaylist(playlistItem.playlistId, {});
-    
+
     return newItem;
   }
 
-  async updatePlaylistItem(id: number, item: Partial<PlaylistItem>): Promise<PlaylistItem> {
+  async updatePlaylistItem(
+    id: number,
+    item: Partial<PlaylistItem>
+  ): Promise<PlaylistItem> {
     const [updatedItem] = await db
       .update(playlistItems)
       .set(item)
       .where(eq(playlistItems.id, id))
       .returning();
-    
+
     // Update the playlist's updatedAt timestamp
     await this.updatePlaylist(updatedItem.playlistId, {});
-    
+
     return updatedItem;
   }
 
-  async removeMovieFromPlaylist(playlistId: number, movieId: number): Promise<void> {
+  async removeMovieFromPlaylist(
+    playlistId: number,
+    movieId: number
+  ): Promise<void> {
     const [item] = await db
       .select()
       .from(playlistItems)
@@ -451,7 +508,7 @@ export class DatabaseStorage implements IStorage {
       );
 
     if (!item) {
-      throw new Error('Movie not found in playlist');
+      throw new Error("Movie not found in playlist");
     }
 
     // Delete the playlist item
@@ -477,22 +534,27 @@ export class DatabaseStorage implements IStorage {
     await this.updatePlaylist(playlistId, {});
   }
 
-  async reorderPlaylistItems(playlistId: number, itemIds: number[]): Promise<void> {
+  async reorderPlaylistItems(
+    playlistId: number,
+    itemIds: number[]
+  ): Promise<void> {
     // Verify all items exist and belong to the playlist
     const items = await db
       .select()
       .from(playlistItems)
       .where(eq(playlistItems.playlistId, playlistId));
-    
-    const itemsMap = new Map(items.map(item => [item.id, item]));
-    
+
+    const itemsMap = new Map(items.map((item) => [item.id, item]));
+
     for (const id of itemIds) {
       const item = itemsMap.get(id);
       if (!item || item.playlistId !== playlistId) {
-        throw new Error(`Item with ID ${id} not found in playlist ${playlistId}`);
+        throw new Error(
+          `Item with ID ${id} not found in playlist ${playlistId}`
+        );
       }
     }
-    
+
     // Update sort order for each item
     for (let i = 0; i < itemIds.length; i++) {
       await db
@@ -500,7 +562,7 @@ export class DatabaseStorage implements IStorage {
         .set({ sortOrder: i })
         .where(eq(playlistItems.id, itemIds[i]));
     }
-    
+
     // Update the playlist's updatedAt timestamp
     await this.updatePlaylist(playlistId, {});
   }
@@ -517,12 +579,12 @@ export class DatabaseStorage implements IStorage {
           sql`LOWER(${users.fullName}) LIKE ${`%${query.toLowerCase()}%`}`
         )
       );
-    
+
     // Filter out the current user if excludeUserId is provided
     if (excludeUserId) {
-      result = result.filter(user => user.id !== excludeUserId);
+      result = result.filter((user) => user.id !== excludeUserId);
     }
-    
+
     return result;
   }
 
@@ -531,17 +593,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(friendships)
       .where(
-        or(
-          eq(friendships.userId, userId),
-          eq(friendships.friendId, userId)
-        )
+        or(eq(friendships.userId, userId), eq(friendships.friendId, userId))
       );
-    
+
     // Filter by status if provided
     if (status) {
       query = query.where(eq(friendships.status, status));
     }
-    
+
     return await query;
   }
 
@@ -551,10 +610,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(friendships)
       .where(
-        and(
-          eq(friendships.friendId, userId),
-          eq(friendships.status, "pending")
-        )
+        and(eq(friendships.friendId, userId), eq(friendships.status, "pending"))
       );
   }
 
@@ -575,41 +631,48 @@ export class DatabaseStorage implements IStorage {
           )
         )
       );
-    
+
     if (existingFriendships.length > 0) {
       // Check the status of the existing friendship
       const existingFriendship = existingFriendships[0];
-      
+
       if (existingFriendship.status === "pending") {
-        throw new Error("You already have a pending friend request with this user");
+        throw new Error(
+          "You already have a pending friend request with this user"
+        );
       } else if (existingFriendship.status === "accepted") {
         throw new Error("You are already friends with this user");
       } else if (existingFriendship.status === "rejected") {
         throw new Error("This friend request was previously rejected");
       } else {
-        throw new Error("A friendship connection already exists with this user");
+        throw new Error(
+          "A friendship connection already exists with this user"
+        );
       }
     }
-    
+
     // Create the new friendship
     const [newFriendship] = await db
       .insert(friendships)
       .values(friendship)
       .returning();
-    
+
     return newFriendship;
   }
 
-  async updateFriendshipStatus(id: number, status: string): Promise<Friendship> {
+  async updateFriendshipStatus(
+    id: number,
+    status: string
+  ): Promise<Friendship> {
     const [updatedFriendship] = await db
       .update(friendships)
       .set({
         status,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(friendships.id, id))
       .returning();
-    
+
     return updatedFriendship;
   }
 
@@ -634,19 +697,24 @@ export class DatabaseStorage implements IStorage {
   async getSharedPlaylists(userId: number): Promise<Playlist[]> {
     const shares = await db
       .select({
-        playlistId: playlistShares.playlistId
+        playlistId: playlistShares.playlistId,
       })
       .from(playlistShares)
       .where(eq(playlistShares.sharedWithUserId, userId));
-    
+
     if (shares.length === 0) {
       return [];
     }
-    
+
     return db
       .select()
       .from(playlists)
-      .where(inArray(playlists.id, shares.map(s => s.playlistId)));
+      .where(
+        inArray(
+          playlists.id,
+          shares.map((s) => s.playlistId)
+        )
+      );
   }
 
   async getPublicPlaylists(): Promise<Playlist[]> {
@@ -657,12 +725,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(playlists.updatedAt));
   }
 
-  async sharePlaylistWithUser(share: InsertPlaylistShare): Promise<PlaylistShare> {
+  async sharePlaylistWithUser(
+    share: InsertPlaylistShare
+  ): Promise<PlaylistShare> {
     const [newShare] = await db
       .insert(playlistShares)
       .values(share)
       .returning();
-    
+
     return newShare;
   }
 
@@ -703,13 +773,11 @@ export class DatabaseStorage implements IStorage {
       .insert(sharedWatches)
       .values(sharedWatch)
       .returning();
-    
+
     return newSharedWatch;
   }
 
   async removeSharedWatch(id: number): Promise<void> {
-    await db
-      .delete(sharedWatches)
-      .where(eq(sharedWatches.id, id));
+    await db.delete(sharedWatches).where(eq(sharedWatches.id, id));
   }
 }

@@ -66,6 +66,7 @@ export interface IStorage {
   getWatchHistory(userId?: number): Promise<WatchHistory[]>;
   addToWatchHistory(history: InsertWatchHistory): Promise<WatchHistory>;
   clearWatchHistory(userId?: number): Promise<void>;
+  removeWatchHistory(id: number): Promise<void>;
   getUserWatchedMovieIds(userId: number): Promise<number[]>;
 
   // User Preferences operations
@@ -411,6 +412,10 @@ export class MemStorage implements IStorage {
 
   async clearWatchHistory(): Promise<void> {
     this.watchHistory.clear();
+  }
+
+  async removeWatchHistory(id: number): Promise<void> {
+    this.watchHistory.delete(id);
   }
 
   // Helper to initialize sample data

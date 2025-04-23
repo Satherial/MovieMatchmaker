@@ -23,8 +23,7 @@ const FilterSummary: FC<FilterSummaryProps> = ({
     filters.categories.length > 0 ||
     filters.minRating > 1 ||
     filters.yearFrom !== "Any" ||
-    filters.yearTo !== "Any" ||
-    (filters.language !== browserLanguage && filters.language !== "all");
+    filters.yearTo !== "Any";
 
   if (!hasActiveFilters) return null;
 
@@ -82,21 +81,6 @@ const FilterSummary: FC<FilterSummaryProps> = ({
           </button>
         </span>
       )}
-
-      {/* Language filter - only show if different from browser default */}
-      {filters.language &&
-        filters.language !== "all" &&
-        filters.language !== browserLanguage && (
-          <span className="bg-primary-100 text-primary-800 text-xs px-3 py-1 rounded-full flex items-center">
-            Language: {languageNames[filters.language] || filters.language}
-            <button
-              className="ml-1 text-primary-600"
-              onClick={() => onRemoveFilter("language")}
-            >
-              <X size={14} />
-            </button>
-          </span>
-        )}
 
       {/* Clear all button */}
       <Button
