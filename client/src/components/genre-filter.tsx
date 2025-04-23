@@ -146,7 +146,7 @@ const GenreFilter: FC<GenreFilterProps> = ({
           </div>
           <Slider
             value={[filters.minRating]}
-            min={1}
+            min={0}
             max={10}
             step={0.1}
             onValueChange={(value) => onFilterChange("minRating", value[0])}

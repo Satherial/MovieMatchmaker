@@ -151,9 +151,9 @@ export class DatabaseStorage implements IStorage {
     // Build conditions array for the query
     const conditions = [];
 
-    // The minRating filter should always be applied with a default of 1 if not specified
+    // The minRating filter should always be applied with a default of 8.0 if not specified
     const effectiveMinRating =
-      typeof filters.minRating === "number" ? filters.minRating : 1;
+      typeof filters.minRating === "number" ? filters.minRating : 8.0;
     conditions.push(gte(movies.rating, effectiveMinRating));
     console.log("Applying minimum rating filter:", effectiveMinRating);
 

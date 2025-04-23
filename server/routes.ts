@@ -151,8 +151,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add minimum rating filter if provided
       if (query.minRating) {
+        console.log(`🌟 Using provided minimum rating: ${query.minRating}`);
         queryParams.append("vote_average.gte", query.minRating as string);
+      } else {
+        // Set default minimum rating to 8.0 if not specified
+        console.log(`🌟 Using default minimum rating: 8.0`);
+        queryParams.append("vote_average.gte", "8.0");
       }
+
+      // Ensure we're always filtering for quality movies by adding a vote count filter
+      queryParams.append("vote_count.gte", "100"); // Ensure movies have a minimum number of votes
 
       // Add genre/category filter if provided
       if (query.categories) {
@@ -199,7 +207,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tmdbData = await tmdbResponse.json();
 
       // Transform TMDB response to match our app's format
-      const movies = tmdbData.results.map((movie: any) => ({
+      interface MovieResult {
+        id: number;
+        title: string;
+        description: string;
+        year: number;
+        rating: number;
+        imageUrl: string | null;
+        backdropUrl: string | null;
+        categories: string[];
+      }
+
+      const movies: MovieResult[] = tmdbData.results.map((movie: any) => ({
         id: movie.id,
         title: movie.title,
         description: movie.overview,
@@ -214,9 +233,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         categories: [], // We'll fetch categories separately
       }));
 
-      // Filter out watched movies
+      console.log(
+        `📊 Movie ratings: ${movies
+          .map((m: MovieResult) => m.rating)
+          .join(", ")}`
+      );
+
+      // Filter out watched movies and ensure minimum rating
       const filteredMovies = movies.filter(
-        (movie: { id: number }) => !watchedMovieIds.includes(movie.id)
+        (movie: { id: number; rating: number }) =>
+          !watchedMovieIds.includes(movie.id) && movie.rating >= 8.0 // Double-check minimum rating on our side
       );
 
       // Get genres for each movie from TMDB

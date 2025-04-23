@@ -41,7 +41,7 @@ const Home: FC = () => {
   );
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
-    minRating: 1,
+    minRating: 8.0,
     yearFrom: "Any",
     yearTo: "Any",
     language: language, // Initialize with the language from our hook
@@ -146,8 +146,8 @@ const Home: FC = () => {
       setFilters((prev) => ({ ...prev, categories: newCategories }));
       setAppliedFilters((prev) => ({ ...prev, categories: newCategories }));
     } else if (type === "minRating") {
-      setFilters((prev) => ({ ...prev, minRating: 1 }));
-      setAppliedFilters((prev) => ({ ...prev, minRating: 1 }));
+      setFilters((prev) => ({ ...prev, minRating: 8.0 }));
+      setAppliedFilters((prev) => ({ ...prev, minRating: 8.0 }));
     } else if (type === "yearFrom" || type === "yearTo") {
       setFilters((prev) => ({ ...prev, [type]: "Any" }));
       setAppliedFilters((prev) => ({ ...prev, [type]: "Any" }));
@@ -168,7 +168,7 @@ const Home: FC = () => {
   const handleClearAllFilters = () => {
     const resetFilters: FilterState = {
       categories: [],
-      minRating: 1,
+      minRating: 8.0,
       yearFrom: "Any",
       yearTo: "Any",
       language: browserLanguage, // Reset to browser's default language instead of "all"

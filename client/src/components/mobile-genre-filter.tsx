@@ -168,7 +168,7 @@ const MobileGenreFilter: FC<MobileGenreFilterProps> = ({
           </div>
           <input
             type="range"
-            min="1"
+            min="0"
             max="10"
             step="0.1"
             value={filters.minRating}

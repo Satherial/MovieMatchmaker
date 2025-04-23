@@ -39,7 +39,7 @@ const FilterSummary: FC<FilterSummaryProps> = ({
 
   const hasActiveFilters =
     filters.categories.length > 0 ||
-    filters.minRating > 1 ||
+    filters.minRating > 8.0 ||
     filters.yearFrom !== "Any" ||
     filters.yearTo !== "Any" ||
     filters.country !== "Any";
@@ -70,7 +70,7 @@ const FilterSummary: FC<FilterSummaryProps> = ({
       })}
 
       {/* Rating filter */}
-      {filters.minRating > 1 && (
+      {filters.minRating > 8.0 && (
         <span className="bg-primary-100 text-primary-800 text-xs px-3 py-1 rounded-full flex items-center">
           Min Rating: {filters.minRating.toFixed(1)}
           <button
