@@ -67,10 +67,21 @@ export class MCPController {
       const userId = (req.user as any).id;
       const playlists = await storage.getUserPlaylists(userId);
 
+      // Enhance playlists with movie count
+      const enhancedPlaylists = await Promise.all(
+        playlists.map(async (playlist) => {
+          const movies = await storage.getPlaylistMovies(playlist.id);
+          return {
+            ...playlist,
+            movieCount: movies.length,
+          };
+        })
+      );
+
       const response: MCPResponse<MCPPlaylistListResponse> = {
         success: true,
         data: {
-          playlists,
+          playlists: enhancedPlaylists,
         },
       };
 
@@ -1190,10 +1201,21 @@ export class MCPController {
       // Get playlists shared with the user
       const sharedPlaylists = await storage.getSharedPlaylists(userId);
 
+      // Enhance playlists with movie count
+      const enhancedPlaylists = await Promise.all(
+        sharedPlaylists.map(async (playlist) => {
+          const movies = await storage.getPlaylistMovies(playlist.id);
+          return {
+            ...playlist,
+            movieCount: movies.length,
+          };
+        })
+      );
+
       const response: MCPResponse<MCPPlaylistListResponse> = {
         success: true,
         data: {
-          playlists: sharedPlaylists,
+          playlists: enhancedPlaylists,
         },
       };
 
@@ -1216,10 +1238,21 @@ export class MCPController {
       // Get public playlists
       const publicPlaylists = await storage.getPublicPlaylists();
 
+      // Enhance playlists with movie count
+      const enhancedPlaylists = await Promise.all(
+        publicPlaylists.map(async (playlist) => {
+          const movies = await storage.getPlaylistMovies(playlist.id);
+          return {
+            ...playlist,
+            movieCount: movies.length,
+          };
+        })
+      );
+
       const response: MCPResponse<MCPPlaylistListResponse> = {
         success: true,
         data: {
-          playlists: publicPlaylists,
+          playlists: enhancedPlaylists,
         },
       };
 

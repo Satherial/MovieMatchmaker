@@ -14,7 +14,19 @@ playlistSharesRouter.get("/", async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any)!.id;
     const sharedPlaylists = await storage.getSharedPlaylists(userId);
-    return res.json(sharedPlaylists);
+
+    // Enhance playlists with movie count
+    const enhancedPlaylists = await Promise.all(
+      sharedPlaylists.map(async (playlist) => {
+        const movies = await storage.getPlaylistMovies(playlist.id);
+        return {
+          ...playlist,
+          movieCount: movies.length,
+        };
+      })
+    );
+
+    return res.json(enhancedPlaylists);
   } catch (error) {
     console.error("Error fetching shared playlists:", error);
     return res
@@ -27,7 +39,19 @@ playlistSharesRouter.get("/", async (req: Request, res: Response) => {
 playlistSharesRouter.get("/public", async (req: Request, res: Response) => {
   try {
     const publicPlaylists = await storage.getPublicPlaylists();
-    return res.json(publicPlaylists);
+
+    // Enhance playlists with movie count
+    const enhancedPlaylists = await Promise.all(
+      publicPlaylists.map(async (playlist) => {
+        const movies = await storage.getPlaylistMovies(playlist.id);
+        return {
+          ...playlist,
+          movieCount: movies.length,
+        };
+      })
+    );
+
+    return res.json(enhancedPlaylists);
   } catch (error) {
     console.error("Error fetching public playlists:", error);
     return res
@@ -54,11 +78,9 @@ playlistSharesRouter.get(
 
       // Check if user owns this playlist
       if (playlist.userId !== (req.user as any)!.id) {
-        return res
-          .status(403)
-          .json({
-            error: "You don't have permission to view this playlist's shares",
-          });
+        return res.status(403).json({
+          error: "You don't have permission to view this playlist's shares",
+        });
       }
 
       const shares = await storage.getPlaylistShares(playlistId);
@@ -139,11 +161,9 @@ playlistSharesRouter.delete(
 
       // Check if user owns this playlist
       if (playlist.userId !== (req.user as any)!.id) {
-        return res
-          .status(403)
-          .json({
-            error: "You don't have permission to modify this playlist's shares",
-          });
+        return res.status(403).json({
+          error: "You don't have permission to modify this playlist's shares",
+        });
       }
 
       await storage.removePlaylistShare(playlistId, sharedWithUserId);

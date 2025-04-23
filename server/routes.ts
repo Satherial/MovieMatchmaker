@@ -587,7 +587,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = getAuthUser(req).id;
       const playlists = await storage.getUserPlaylists(userId);
-      res.json(playlists);
+
+      // Enhance playlists with movie count
+      const enhancedPlaylists = await Promise.all(
+        playlists.map(async (playlist) => {
+          const movies = await storage.getPlaylistMovies(playlist.id);
+          return {
+            ...playlist,
+            movieCount: movies.length,
+          };
+        })
+      );
+
+      res.json(enhancedPlaylists);
     } catch (error) {
       console.error("Error fetching playlists:", error);
       res.status(500).json({ error: "Failed to fetch playlists" });
