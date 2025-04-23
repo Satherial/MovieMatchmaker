@@ -153,7 +153,7 @@ const Home: FC = () => {
       <Header />
 
       {/* Genre transition animation */}
-      <AnimatedGenreTransition genreName={null} />
+      <AnimatedGenreTransition />
 
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -109,10 +109,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sort_by: (query.sort as string) || "primary_release_date.desc",
       });
 
-      console.log(
-        `🔍 Sorting movies by: ${query.sort || "primary_release_date.desc"}`
-      );
-
       // Add year filter if provided
       if (query.yearFrom && query.yearFrom !== "Any") {
         queryParams.append(
